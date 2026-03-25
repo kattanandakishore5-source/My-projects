@@ -1,0 +1,60 @@
+{% extends 'shop/basic.html' %}
+{% block title %} Sign Up - My Awesome Cart {% endblock %}
+
+{% block body %}
+<div class="store-container my-5">
+    <div class="content-card-store mx-auto" style="max-width: 500px;">
+        <div class="text-center mb-4">
+            <h2 class="text-primary font-weight-bold">Create Account</h2>
+            <p class="text-secondary">Join My Awesome Cart today</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="store-list-group">
+                {% for field in form %}
+                    <div class="form-group mb-3">
+                        <label class="store-label">{{ field.label }}</label>
+                        <div class="text-white">
+                            {{ field }}
+                        </div>
+                        {% if field.help_text %}
+                            <small class="form-text text-muted" style="font-size: 0.75rem;">{{ field.help_text }}</small>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <p class="text-danger small">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-cta w-100 py-3 mt-3">Sign Up</button>
+        </form>
+
+        <div class="mt-4 text-center border-top border-secondary pt-3">
+            <p class="text-secondary">Already have an account?
+                <a href="{% url 'login' %}" class="text-primary font-weight-bold">Login here</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Ensures Django's default form widgets match your store theme */
+    input[type="text"], input[type="password"], input[type="email"], textarea {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background-color: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        color: white !important;
+        border-radius: 8px;
+    }
+    input:focus {
+        border-color: var(--accent-primary) !important;
+        outline: none;
+    }
+    ul.errorlist {
+        display: none; /* Hide default error lists as we handle them per-field */
+    }
+</style>
+{% endblock %}

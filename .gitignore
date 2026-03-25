@@ -1,0 +1,11 @@
+*.pyc
+__pycache__/
+
+# Local environments / IDE
+.venv/
+.idea/
+.vscode/
+
+# Local runtime artifacts
+db.sqlite3
+media/

@@ -1,0 +1,45 @@
+{% extends 'shop/basic.html' %}
+{% block title %} My Wishlist - My Awesome Cart {% endblock %}
+
+{% block body %}
+<div class="store-container my-4" id="wishlist-container">
+    <div class="content-card-store mx-auto">
+        <h2 class="text-primary mb-4 font-weight-bold">Your Wishlist</h2>
+
+        <div class="product-grid">
+            {% for item in wishlist_items %}
+            <div class="product-card">
+                <div class="store-image-wrapper">
+                    <img src='/media/{{item.product.image}}' alt="{{item.product.product_name}}">
+                </div>
+                <div class="store-card-body">
+                    <h5 class="product-title">{{item.product.product_name}}</h5>
+                    <p class="store-product-desc">{{item.product.desc|slice:"0:53"}}...</p>
+                    <div class="store-price-row">
+                        <span class="text-secondary">Price</span>
+                        <span class="product-price">₹<span>{{item.product.price}}</span></span>
+                    </div>
+                    <div class="store-actions">
+                        <form hx-post="{% url 'AddToCart' item.product.id %}" hx-target="#wishlist-container" hx-select="#wishlist-container" hx-swap="outerHTML" class="w-100 mb-2">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary w-100">Add To Cart</button>
+                        </form>
+                        <form hx-post="{% url 'ToggleWishlist' item.product.id %}" hx-target="#wishlist-container" hx-select="#wishlist-container" hx-swap="outerHTML" class="w-100">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger w-100">Remove</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <p class="text-secondary">Your wishlist is empty.</p>
+                <a href="{% url 'ShopHome' %}" class="btn btn-primary mt-3">Start Shopping</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <span id="cart_count" hx-swap-oob="true">{{ cart.items.count|default:"0" }}</span>
+</div>
+{% endblock %}

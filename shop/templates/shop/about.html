@@ -1,0 +1,62 @@
+{% extends 'shop/basic.html' %}
+
+{% block title%} About Us - My Awesome Cart{% endblock %}
+
+{% block body %}
+<div class="store-container my-4">
+  <div class="content-card-store mx-auto mb-5 border-0" style="background-color: var(--bg-surface);">
+    <div class="container py-4">
+      <h1 class="display-4 text-primary font-weight-bold mb-4">Welcome to AwesomeCart!</h1>
+      <p class="text-secondary" style="font-size: 1.1rem; line-height: 1.8;">
+        My Awesome Cart Pvt Ltd. is an electronic commerce company based in India. Founded with a vision to make quality products accessible to everyone, we started our journey focusing on a niche market before rapidly expanding into diverse categories. Today, we offer everything from consumer electronics to fashion, fitness equipment, and lifestyle products.
+      </p>
+      <p class="text-secondary" style="font-size: 1.1rem; line-height: 1.8;">
+        We strive to provide an unparalleled shopping experience with top-notch customer service, fast delivery, and a seamless online platform. Your trust is our biggest asset, and we continuously innovate to bring the best products right to your doorstep.
+      </p>
+      <div class="mt-4 pt-2">
+        <a class="btn btn-cta px-4 py-2" href="{% url 'ShopHome' %}" role="button">Start Shopping &raquo;</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="container px-0 my-5">
+    <div class="row">
+      <div class="col-md-4 mb-4">
+        <div class="content-card-store h-100 p-4" style="background-color: var(--bg-base); border: 1px solid var(--border-color);">
+          <h3 class="text-primary mb-3">Our Mission</h3>
+          <p class="text-secondary mb-4">
+            To democratize commerce through technology. We aim to empower consumers and sellers by providing a robust, reliable, and inclusive digital marketplace.
+          </p>
+          <div class="mt-auto">
+            <a class="btn btn-secondary" href="{% url 'ContactUs' %}" role="button">Contact Us &raquo;</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4 mb-4">
+        <div class="content-card-store h-100 p-4" style="background-color: var(--bg-base); border: 1px solid var(--border-color);">
+          <h3 class="text-primary mb-3">Our Vision</h3>
+          <p class="text-secondary mb-4">
+            To become the most trusted and preferred e-commerce destination. We envision a future where shopping is not just a transaction, but a delightful experience.
+          </p>
+          <div class="mt-auto">
+            <a class="btn btn-secondary" href="{% url 'TrackingStatus' %}" role="button">Track Order &raquo;</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4 mb-4">
+        <div class="content-card-store h-100 p-4" style="background-color: var(--bg-base); border: 1px solid var(--border-color);">
+          <h3 class="text-primary mb-3">Community</h3>
+          <p class="text-secondary mb-4">
+            We believe in giving back to the community that supports us. Through sustainable practices and empowering local sellers, we are building a better tomorrow together.
+          </p>
+          <div class="mt-auto">
+            <a class="btn btn-secondary" href="{% url 'ShopHome' %}" role="button">Learn More &raquo;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

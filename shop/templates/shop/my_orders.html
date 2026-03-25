@@ -1,0 +1,39 @@
+{% extends 'shop/basic.html' %}
+{% block title %} My Orders - My Awesome Cart {% endblock %}
+
+{% block body %}
+<div class="store-container my-4">
+    <div class="content-card-store mx-auto">
+        <h2 class="text-primary mb-4 font-weight-bold">Your Order History</h2>
+
+        <div class="store-list-group">
+            {% if orders %}
+            {% for order in orders %}
+            <div class="content-card-store mb-3 p-3"
+                style="background-color: var(--bg-base); border: 1px solid var(--border-color);">
+                <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-2">
+                    <h5 class="text-primary mb-0">Order #{{ order.order_id }}</h5>
+                    <span class="badge badge-primary p-2">₹{{ order.amount }}</span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <p class="text-secondary mb-1">Shipping to: {{ order.address }}, {{ order.city }}</p>
+                        <p class="text-secondary mb-0">Contact: {{ order.phone }}</p>
+                    </div>
+                    <div class="col-md-4 text-right align-self-end">
+                        <a href="/shop/tracker" class="btn btn-sm btn-outline-primary">Track Order</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="text-center py-5">
+                <p class="text-secondary">You haven't placed any orders yet.</p>
+                <a href="/shop" class="btn btn-primary mt-3">Start Shopping</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'shop/basic.html' %}
+{% block title%} MyAwesomeCart - Your Personal Storefront{% endblock %}
+
+{% block body %}
+{% load static %}
+<div class="store-container">
+    {% for product, range, nSlides, useCarousel in allProds %}
+    <div class="section-title">
+        <h3>Flash Sale On {{product.0.category}}</h3>
+    </div>
+
+    <div class="product-grid">
+        {% for i in product %}
+        <div class="product-card">
+            <div class="store-image-wrapper">
+                <img src='/media/{{i.image}}' alt="{{i.product_name}}">
+            </div>
+            <div class="store-card-body">
+                <h5 class="product-title" id="namepr{{i.id}}">{{i.product_name}}</h5>
+                <p class="store-product-desc">{{i.desc|slice:"0:53"}}...</p>
+                <div class="store-price-row">
+                    <span class="text-secondary">Price</span>
+                    <span class="product-price">₹<span id="pricepr{{i.id}}">{{i.price}}</span></span>
+                </div>
+
+                <div class="cart-action">
+                    {% include 'shop/partials/button_actions.html' with i=i %}
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

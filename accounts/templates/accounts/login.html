@@ -1,0 +1,59 @@
+{% extends 'shop/basic.html' %}
+{% block title %} Login - My Awesome Cart {% endblock %}
+
+{% block body %}
+<div class="store-container my-5">
+    <div class="content-card-store mx-auto" style="max-width: 400px;">
+        <div class="text-center mb-4">
+            <h2 class="text-primary font-weight-bold">Welcome Back</h2>
+            <p class="text-secondary">Login to your account</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="store-list-group">
+                {% for field in form %}
+                    <div class="form-group mb-3">
+                        <label class="store-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <p class="text-danger small">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger bg-dark border-danger text-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-cta w-100 py-3 mt-3">Login</button>
+        </form>
+
+        <div class="mt-4 text-center border-top border-secondary pt-3">
+            <p class="text-secondary">Don't have an account? 
+                <a href="{% url 'signup' %}" class="text-primary font-weight-bold">Sign up</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Styling to match signup and your existing store theme */
+    input[type="text"], input[type="password"] {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background-color: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        color: white !important;
+        border-radius: 8px;
+    }
+    input:focus {
+        border-color: var(--accent-primary) !important;
+        outline: none;
+    }
+</style>
+{% endblock %}

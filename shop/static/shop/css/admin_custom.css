@@ -1,0 +1,22 @@
+/* MyAwesomeCart/shop/static/shop/css/admin_custom.css */
+
+@media (min-width: 1024px) {
+    /* Pin the 'Image Preview' fieldset to the right side */
+    .img-right-column {
+        position: absolute;
+        right: 30px;
+        top: 100px;
+        width: 300px;
+        z-index: 100;
+        background: #ffffff !important;
+        padding: 15px;
+        border: 1px solid #ddd !important;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* Prevent the main form from sliding underneath the image */
+    #product_form .aligned {
+        width: calc(100% - 380px);
+    }
+}

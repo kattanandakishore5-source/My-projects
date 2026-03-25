@@ -1,0 +1,64 @@
+{% extends 'shop/basic.html' %}
+
+{% block title %} My Profile - Awesome Cart {% endblock %}
+
+{% block body %}
+<div class="store-container my-5">
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="content-card-store p-4 h-100" style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px;">
+                <div class="text-center mb-4">
+                    <div class="bg-primary text-white d-inline-flex justify-content-center align-items-center rounded-circle mb-3" style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
+                        {{ user.username|make_list|first|upper }}
+                    </div>
+                    <h3 class="text-white font-weight-bold">{{ user.username }}</h3>
+                    <p class="text-secondary">{{ user.email }}</p>
+                </div>
+                <hr class="border-secondary">
+                <div class="mt-3">
+                    <p class="text-secondary mb-1"><strong>Date Joined:</strong> <span class="text-white">{{ user.date_joined|date:"F d, Y" }}</span></p>
+                    <p class="text-secondary mb-1"><strong>Last Login:</strong> <span class="text-white">{{ user.last_login|date:"F d, Y" }}</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="content-card-store p-4 h-100" style="background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px;">
+                <h3 class="text-primary mb-4 font-weight-bold">My Order History</h3>
+                
+                {% if orders %}
+                <div class="table-responsive">
+                    <table class="table table-borderless text-white">
+                        <thead style="border-bottom: 2px solid var(--border-color);">
+                            <tr>
+                                <th class="text-secondary pb-3">Order ID</th>
+                                <th class="text-secondary pb-3">Items</th>
+                                <th class="text-secondary pb-3">Total Amount</th>
+                                <th class="text-secondary pb-3">Shipping City</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td class="py-3 font-weight-bold text-primary">#{{ order.order_id }}</td>
+                                <td class="py-3 text-truncate" style="max-width: 200px;" title="{{ order.items_json }}">
+                                    Ordered Items
+                                </td>
+                                <td class="py-3">₹{{ order.amount }}</td>
+                                <td class="py-3">{{ order.city }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <p class="text-secondary mb-3">You haven't placed any orders yet.</p>
+                    <a href="{% url 'ShopHome' %}" class="btn btn-primary">Start Shopping</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

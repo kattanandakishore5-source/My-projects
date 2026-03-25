@@ -1,0 +1,159 @@
+{% extends 'shop/basic.html' %}
+
+{% block title%} {{product.product_name}} - My Awesome Cart{% endblock %}
+
+{% block body %}
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+<div class="store-container my-4">
+    <div class="product-view">
+        <div class="product-detail-info">
+            <h1 class="product-title font-weight-bold" style="font-size: 28px;">{{product.product_name}}</h1>
+            <h3 class="product-price my-3 pb-3 border-bottom text-primary">₹{{product.price}}</h3>
+            <p class="product-desc mt-3 text-secondary" style="font-size: 1.1rem; line-height: 1.6;">{{product.desc}}</p>
+        </div>
+
+        <div class="product-detail-right d-flex flex-column align-items-center">
+            <div class="product-detail-image content-card-store d-flex justify-content-center align-items-center" style="padding: 2rem; width: 100%; max-width: 350px;">
+                <img src="/media/{{product.image}}" alt="{{product.product_name}}" class="img-fluid"
+                    style="max-height: 250px; width: 100%; object-fit: contain; border-radius: 14px;">
+            </div>
+
+            <div class="cart-action mt-4 w-100" style="max-width: 350px;">
+                {% with i=product %}
+                {% include 'shop/partials/button_actions.html' %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+
+    <div class="recommendations-section mt-5">
+        <h3 class="text-primary mb-4 font-weight-bold">Similar Products</h3>
+        <div class="row">
+            {% for rec in recommendations %}
+            <div class="col-md-3 mb-4">
+                <div class="content-card-store p-3 h-100 d-flex flex-column align-items-center text-center">
+                    <a href="/shop/products/{{rec.id}}" class="text-decoration-none">
+                        <img src="/media/{{rec.image}}" alt="{{rec.product_name}}" class="img-fluid mb-3"
+                             style="height: 150px; width: 100%; object-fit: contain; border-radius: 8px;">
+                        <h6 class="text-white font-weight-bold mb-2">{{ rec.product_name }}</h6>
+                        <p class="text-primary mb-3">₹{{ rec.price }}</p>
+                    </a>
+                    <div class="cart-action w-100">
+                        {% with i=rec %}
+                        {% include 'shop/partials/button_actions.html' %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if recently_viewed %}
+    <div class="recently-viewed-section mt-5">
+        <h3 class="text-secondary mb-4 font-weight-bold" style="font-size: 1.5rem;">Recently Viewed</h3>
+        <div class="row">
+            {% for rv in recently_viewed %}
+            <div class="col-md-3 mb-4">
+                <div class="content-card-store p-3 h-100 d-flex flex-column align-items-center text-center" style="opacity: 0.9;">
+                    <a href="/shop/products/{{rv.id}}" class="text-decoration-none">
+                        <img src="/media/{{rv.image}}" alt="{{rv.product_name}}" class="img-fluid mb-2"
+                             style="height: 120px; width: 100%; object-fit: contain; border-radius: 6px;">
+                        <h6 class="text-white mb-1" style="font-size: 0.9rem;">{{ rv.product_name }}</h6>
+                    </a>
+                    <div class="cart-action w-100 mt-2">
+                        {% with i=rv %}
+                        {% include 'shop/partials/button_actions.html' %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <hr class="border-secondary my-5">
+    <h3 class="text-primary mb-4 font-weight-bold">Customer Reviews</h3>
+
+    <div class="row">
+        <div class="col-md-5 mb-4 mr-lg-4">
+            {% if user.is_authenticated %}
+            <div class="content-card-store p-4">
+                <h5 class="mb-3 text-white">Write a Review</h5>
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group mb-3">
+                        <label class="text-secondary small">Rating (1-5)</label>
+                        {{ form.rating }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="text-secondary small">Your Experience</label>
+                        {{ form.review_text }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="text-secondary small">Attach Image</label><br>
+                        {{ form.image }}
+                    </div>
+                    <button type="submit" class="btn btn-primary-store w-100 mt-2">Submit Review</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="content-card-store p-4 text-center">
+                <p class="text-secondary mb-0">Please <a href="{% url 'login' %}" class="text-primary">Login</a> to review.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-6 ml-lg-4">
+            <div class="reviews-list">
+                {% for review in page_obj %}
+                <div class="content-card-store mb-3 p-3">
+                    <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-2">
+                        <strong class="text-primary">{{ review.user.username }}</strong>
+                        <span class="badge badge-primary p-2">{{ review.rating }} / 5 ★</span>
+                    </div>
+                    <p class="text-secondary mb-2" style="font-size: 0.85rem;">{{ review.created_at|date:"F d, Y" }}</p>
+                    <p class="text-white">{{ review.review_text }}</p>
+
+                    {% if review.image %}
+                    <img src="{{ review.image.url }}" alt="Review Image" class="img-fluid mt-2"
+                         style="max-height: 150px; border-radius: 8px;">
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="text-center py-4 content-card-store">
+                    <p class="text-secondary mb-0">No reviews yet. Be the first to review this product!</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Review pages" class="mt-4">
+                <ul class="pagination justify-content-center" style="gap: 5px;">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link bg-dark text-primary border-secondary"
+                            href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link bg-primary text-white border-primary">{{ num }}</span></li>
+                    {% else %}
+                    <li class="page-item"><a class="page-link bg-dark text-white border-secondary"
+                            href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link bg-dark text-primary border-secondary"
+                            href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

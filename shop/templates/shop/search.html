@@ -1,0 +1,120 @@
+{% extends 'shop/basic.html' %}
+
+{% block title%} Search Results - My Awesome Cart{% endblock %}
+
+{% block css %}
+.carousel-indicators .active {
+background-color: blue;
+}
+
+body .carousel-indicator li {
+background-color: blue;
+}
+body .carousel-indicators {
+bottom: -40px;
+}
+.carousel-indicators li {
+background-color: #7270fc;
+}
+body .carousel-control-prev-icon,
+body .carousel-control-next-icon {
+background-color: blue;
+}
+.carousel-control-prev,
+.carousel-control-next {
+top: auto;
+bottom: auto;
+padding-top: 222px;
+}
+body .no-padding {
+padding-left: 0;
+padding-right: 0;
+}
+{% endblock %}
+
+{% block body %}
+{% load static %}
+<div class="store-container">
+    {% for product, range, nSlides, useCarousel in allProds %}
+    <div class="section-title">
+        <h3 class="text-primary">Search Results For {{product.0.category}}</h3>
+    </div>
+    {% if useCarousel %}
+    <div class="row">
+        <div id="demo{{forloop.counter}}" class="col carousel slide my-3" data-ride="carousel">
+            <ul class="carousel-indicators">
+                <li data-target="#demo{{forloop.counter}}" data-slide-to="0" class="active"></li>
+                {% for i in range %}
+                <li data-target="#demo{{forloop.parentloop.counter}}" data-slide-to="{{i}}"></li>
+                {% endfor %}
+            </ul>
+            <div class="container carousel-inner no-padding">
+                <div class="carousel-item active">
+                    {% for i in product %}
+                    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3 mb-4 d-inline-block float-left">
+                        <div class="product-card">
+                            <div class="store-image-wrapper">
+                                <img src='/media/{{i.image}}' alt="{{i.product_name}}">
+                            </div>
+                            <div class="store-card-body">
+                                <h5 class="product-title" id="namepr{{i.id}}">{{i.product_name}}</h5>
+                                <p class="store-product-desc">{{i.desc|slice:"0:53"}}...</p>
+                                <div class="store-price-row">
+                                    <span class="text-secondary">Price</span>
+                                    <span class="product-price">₹<span id="pricepr{{i.id}}">{{i.price}}</span></span>
+                                </div>
+                                <div class="cart-action">
+                                    {% include 'shop/partials/button_actions.html' with i=i %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% if forloop.counter|divisibleby:4 and forloop.counter > 0 and not forloop.last %}
+                    </div>
+                    <div class="carousel-item">
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            <a class="carousel-control-prev" href="#demo{{forloop.counter}}" data-slide="prev">
+                <span class="carousel-control-prev-icon"></span>
+            </a>
+            <a class="carousel-control-next" href="#demo{{forloop.counter}}" data-slide="next">
+                <span class="carousel-control-next-icon"></span>
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="product-grid">
+        {% for i in product %}
+        <div class="product-card">
+            <div class="store-image-wrapper">
+                <img src='/media/{{i.image}}' alt="{{i.product_name}}">
+            </div>
+            <div class="store-card-body">
+                <h5 class="product-title" id="namepr{{i.id}}">{{i.product_name}}</h5>
+                <p class="store-product-desc">{{i.desc|slice:"0:53"}}...</p>
+                <div class="store-price-row">
+                    <span class="text-secondary">Price</span>
+                    <span class="product-price">₹<span id="pricepr{{i.id}}">{{i.price}}</span></span>
+                </div>
+                <div class="cart-action">
+                    {% include 'shop/partials/button_actions.html' with i=i %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    {% if msg|length != 0 %}
+    alert('{{msg}}');
+    window.location.href = "/"
+    {% endif %}
+</script>
+{% endblock %}

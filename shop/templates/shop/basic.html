@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/shop/css/style.css">
+    <title>{% block title %}My Awesome Cart{% endblock %}</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1 0 auto;
+            margin-top: 75px;
+        }
+
+        /* Fixed spacing to match exactly the navbar height */
+        footer {
+            flex-shrink: 0;
+            background-color: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+            padding: 20px 0;
+        }
+
+        .dropdown-menu {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            margin-top: 10px;
+        }
+
+        .dropdown-item {
+            color: var(--text-primary);
+            transition: 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--border-color);
+            color: var(--accent-primary);
+        }
+
+        {% block css %}{% endblock %}
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-left">
+        <a href="{% url 'ShopHome' %}" class="logo">AwesomeCart</a>
+        <a href="{% url 'AboutUs' %}">About</a>
+        <a href="{% url 'ContactUs' %}">Contact Us</a>
+        <a href="{% url 'TrackingStatus' %}">Tracker</a>
+    </div>
+
+    <div class="nav-center">
+        <form method="get" action="{% url 'Search' %}" class="search-form">
+            <input type="text" name="search" placeholder="Search products..." class="search-input" required>
+            <button type="submit" class="btn btn-primary search-btn">Search</button>
+        </form>
+    </div>
+
+    <div class="nav-right">
+        <a href="{% url 'CartDetail' %}" class="cart-link">
+            Cart <span id="cart_count" class="cart-badge ml-1">{{ global_cart_count|default:"0" }}</span>
+        </a>
+
+        {% if user.is_authenticated %}
+            <div class="dropdown">
+                <span class="user-name dropdown-toggle" id="profileMenu" data-toggle="dropdown" aria-haspopup="true"
+                      aria-expanded="false">
+                    {{ user.username }}
+                </span>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="profileMenu">
+                    <a class="dropdown-item" href="{% url 'profile' %}">My Profile</a>
+                    <a class="dropdown-item" href="{% url 'MyOrders' %}">My Orders</a>
+                    <a class="dropdown-item" href="{% url 'Wishlist' %}">Wishlist</a>
+                    <div class="dropdown-divider" style="border-color: var(--border-color);"></div>
+                    <form action="{% url 'logout' %}" method="post" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item text-danger"
+                                style="background: transparent; border: none; width: 100%; text-align: left;">Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <a href="{% url 'login' %}">Login</a>
+        {% endif %}
+    </div>
+</nav>
+
+<main>
+    {% block body %} {% endblock %}
+</main>
+
+<footer class="text-center text-secondary mt-5">
+    <div class="container">
+        <small>&copy; 2026 My Awesome Cart. All Rights Reserved.</small>
+    </div>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"></script>
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script>
+    window.addEventListener('scroll', function () {
+        if (window.scrollY > 10) {
+            document.querySelector('.navbar').classList.add('scrolled');
+        } else {
+            document.querySelector('.navbar').classList.remove('scrolled');
+        }
+    });
+</script>
+{% block js %} {% endblock %}
+</body>
+</html>

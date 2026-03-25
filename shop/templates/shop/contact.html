@@ -1,0 +1,87 @@
+{% extends 'shop/basic.html' %}
+
+{% block title%} Contact Us - My Awesome Cart{% endblock %}
+
+{% block body %}
+<div class="store-container my-4">
+  <div class="content-card-store mx-auto border-0 p-0" style="background-color: var(--bg-surface); overflow: hidden; max-width: 1000px;">
+    <div class="row no-gutters">
+
+      <div class="col-md-5 text-white p-5 d-flex flex-column justify-content-center" style="background: linear-gradient(135deg, var(--accent-primary) 0%, var(--nav-bg) 100%);">
+        <h2 class="font-weight-bold mb-4">Get in Touch</h2>
+        <p class="mb-5" style="color: rgba(255,255,255,0.8); font-size: 1.05rem; line-height: 1.8;">
+          We'd love to hear from you! Whether you have a question about features, pricing, or anything else, our team is ready to answer all your questions.
+        </p>
+
+        <div class="d-flex align-items-center mb-4">
+          <div class="mr-3 p-3 d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,0.1); border-radius: 12px; width: 50px; height: 50px;">
+            <span style="font-size: 1.25rem;">📍</span>
+          </div>
+          <div>
+            <h6 class="mb-1 font-weight-bold">Address</h6>
+            <p class="mb-0" style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">123 E-commerce St, Tech City, IN 560001</p>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center mb-4">
+          <div class="mr-3 p-3 d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,0.1); border-radius: 12px; width: 50px; height: 50px;">
+            <span style="font-size: 1.25rem;">📞</span>
+          </div>
+          <div>
+            <h6 class="mb-1 font-weight-bold">Phone</h6>
+            <p class="mb-0" style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">+91 98765 43210</p>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center">
+          <div class="mr-3 p-3 d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,0.1); border-radius: 12px; width: 50px; height: 50px;">
+            <span style="font-size: 1.25rem;">✉️</span>
+          </div>
+          <div>
+            <h6 class="mb-1 font-weight-bold">Email</h6>
+            <p class="mb-0" style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">support@awesomecart.com</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-7 p-5">
+        <h3 class="text-primary mb-4 font-weight-bold">Send us a Message</h3>
+        <form action="/shop/contact/" method="post">{% csrf_token %}
+          <div class="form-row">
+            <div class="form-group col-md-6 mb-3">
+              <label for="name" class="store-label">Full Name</label>
+              <input type="text" class="form-control store-input" id="name" name="name" placeholder="John Doe" required>
+            </div>
+            <div class="form-group col-md-6 mb-3">
+              <label for="phone" class="store-label">Phone Number</label>
+              <input type="tel" class="form-control store-input" id="phone" name="phone" placeholder="+91 XXXXX XXXXX" required>
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label for="email" class="store-label">Email Address</label>
+            <input type="email" class="form-control store-input" id="email" name="email" placeholder="john@example.com" required>
+          </div>
+
+          <div class="form-group mb-4">
+            <label for="desc" class="store-label">How can we help you?</label>
+            <textarea class="form-control store-input" id="desc" name="desc" rows="5" placeholder="Write your message here..." required></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-cta w-100 py-3" style="font-size: 1.05rem;">Send Message</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block js%}
+<script>
+  {% if thank %}
+  alert('Thanks for contacting us. We will get back to you soon!');
+  document.location = "/shop/contact";
+  {% endif %}
+</script>
+{% endblock %}
