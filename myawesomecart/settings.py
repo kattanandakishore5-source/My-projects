@@ -8,12 +8,14 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '9h_#wy*6)%#ug3-uv@7xlryan5a36rqe^j5a$-i0@fo9szu=%n'
+# Optimized: Fetching from environment variables with a fallback for local dev
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '9h_#wy*6)%#ug3-uv@7xlryan5a36rqe^j5a$-i0@fo9szu=%n')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Optimized: Fetching from environment variables (True by default for local dev)
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if os.environ.get('DJANGO_ALLOWED_HOSTS') else []
 
 # Application definition
 INSTALLED_APPS = [

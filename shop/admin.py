@@ -2,14 +2,12 @@ from django.contrib import admin
 from .models import Product, Contact, Orders, OrderUpdate, Cart, CartItem, Coupon, ProductReview
 from django.utils.html import format_html
 
-# Basic Model Registrations
-admin.site.register(Product)
+# Basic Model Registrations (Removed Product from here to use the custom class below)
 admin.site.register(Contact)
 admin.site.register(Orders)
 admin.site.register(OrderUpdate)
 admin.site.register(Cart)
 admin.site.register(CartItem)
-
 
 @admin.register(Coupon)
 class CouponAdmin(admin.ModelAdmin):
@@ -17,23 +15,18 @@ class CouponAdmin(admin.ModelAdmin):
     list_filter = ('active', 'discount_type', 'valid_from', 'valid_to')
     search_fields = ('code',)
 
-
-# Custom Admin for Product Reviews
 @admin.register(ProductReview)
 class ProductReviewAdmin(admin.ModelAdmin):
     list_display = ('product', 'user', 'rating', 'created_at')
     list_filter = ('rating', 'created_at')
-
-    # Makes the review read-only so admin can't fake/edit user reviews
     readonly_fields = ('product', 'user', 'review_text', 'rating', 'image')
 
-    # Prevents the admin from writing their own reviews via the dashboard
     def has_add_permission(self, request):
         return False
 
-
+# Fixed: Properly registered the custom ProductAdmin to the Product model
+@admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    # Organizes fields into a main section and a sidebar-style preview section
     fieldsets = (
         ("Product Details", {
             'fields': ('product_name', 'category', 'subcategory', 'price', 'desc', 'pub_date', 'stock',
@@ -61,7 +54,6 @@ class ProductAdmin(admin.ModelAdmin):
     img_preview.short_description = ""
 
     class Media:
-        # This tells Django to load your custom CSS file for this admin page
         css = {
             'all': ('shop/css/admin_custom.css',)
         }

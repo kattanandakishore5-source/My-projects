@@ -1,25 +1,24 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from .forms import CustomUserCreationForm
 from shop.models import Orders
 
 def signup_view(request):
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)  # Use custom form
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             return redirect('ShopHome')
     else:
-        form = CustomUserCreationForm()  # Use custom form
+        form = CustomUserCreationForm()
 
     return render(request, 'accounts/signup.html', {'form': form})
 
 
 def login_view(request):
-    # (Keep your existing login_view code exactly the same)
     if request.method == 'POST':
         form = AuthenticationForm(data=request.POST)
         if form.is_valid():
@@ -32,7 +31,6 @@ def login_view(request):
 
 
 def logout_view(request):
-    # (Keep your existing logout_view code exactly the same)
     if request.method == 'POST':
         logout(request)
         return redirect('ShopHome')

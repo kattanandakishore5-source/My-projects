@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Product, Contact, Orders, OrderUpdate, Cart, CartItem, Coupon, Wishlist, ProductReview
 from django.core.paginator import Paginator
 from django.db import transaction
+from django.db.models import Q
 from math import ceil
 import json
 from django.views.decorators.csrf import csrf_exempt
@@ -9,66 +10,73 @@ from django.http import HttpResponse
 from django.utils import timezone
 from .forms import CouponApplyForm, ReviewForm
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, logout
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
 MERCHANT_KEY = 'Your-Merchant-Key-Here'
+
+
+def _get_or_create_cart(request):
+    if not request.session.session_key:
+        request.session.create()
+    cart, created = Cart.objects.get_or_create(session_key=request.session.session_key)
+    return cart
 
 
 def index(request):
     cart = _get_or_create_cart(request)
     cart_items_dict = {item.product_id: item.quantity for item in cart.items.all()}
 
+    from itertools import groupby
+    from operator import attrgetter
+
     allProds = []
-    catprods = Product.objects.values('category', 'id')
-    cats = {item['category'] for item in catprods}
-    for cat in cats:
-        # Only fetch products that have stock > 0
-        prod = Product.objects.filter(category=cat, stock__gt=0)
+    all_products = Product.objects.filter(stock__gt=0).order_by('category')
+
+    for cat, prod_group in groupby(all_products, key=attrgetter('category')):
+        prod = list(prod_group)
         for p in prod:
             p.cart_qty = cart_items_dict.get(p.id, 0)
         n = len(prod)
         nSlides = n // 4 + ceil((n / 4) - (n // 4))
-        if len(prod) != 0:
+        if n != 0:
             allProds.append([prod, range(1, nSlides), nSlides, n > 4])
+
     params = {'allProds': allProds}
     return render(request, 'shop/index.html', params)
 
 
-def searchMatch(query, item):
-    q = query.lower()
-    if q in item.desc.lower() or q in item.product_name.lower() or q in item.category.lower() or q in item.subcategory.lower():
-        return True
-    return False
-
-
 def search(request):
-    query = request.GET.get('search', '')
+    query = request.GET.get('search', '').strip()
     allProds = []
 
-    # Fetch current cart quantities for search results
     cart = _get_or_create_cart(request)
     cart_items_dict = {item.product_id: item.quantity for item in cart.items.all()}
 
-    catprods = Product.objects.values('category', 'id')
-    cats = {item['category'] for item in catprods}
+    from itertools import groupby
+    from operator import attrgetter
 
-    for cat in cats:
-        prodtemp = Product.objects.filter(category=cat, stock__gt=0)
-        prod = [item for item in prodtemp if searchMatch(query, item)]
+    # Optimized: Removed Python-side loop filtering. Used DB-level ORM lookups.
+    if len(query) >= 4:
+        all_products = Product.objects.filter(
+            Q(product_name__icontains=query) |
+            Q(desc__icontains=query) |
+            Q(category__icontains=query) |
+            Q(subcategory__icontains=query),
+            stock__gt=0
+        ).order_by('category')
 
-        # Map the quantity to each product in the search results
-        for p in prod:
-            p.cart_qty = cart_items_dict.get(p.id, 0)
+        for cat, prod_group in groupby(all_products, key=attrgetter('category')):
+            prod = list(prod_group)
+            for p in prod:
+                p.cart_qty = cart_items_dict.get(p.id, 0)
 
-        n = len(prod)
-        nSlides = n // 4 + ceil((n / 4) - (n // 4))
-        if len(prod) != 0:
-            allProds.append([prod, range(1, nSlides), nSlides, n > 4])
+            n = len(prod)
+            nSlides = n // 4 + ceil((n / 4) - (n // 4))
+            if n != 0:
+                allProds.append([prod, range(1, nSlides), nSlides, n > 4])
 
     params = {'allProds': allProds, "msg": ""}
     if len(allProds) == 0 or len(query) < 4:
-        params = {'msg': "Please make sure to enter relevant search query"}
+        params = {'msg': "Please make sure to enter a relevant search query of at least 4 characters"}
 
     return render(request, 'shop/search.html', params)
 
@@ -98,9 +106,7 @@ def tracker(request):
             order = Orders.objects.filter(order_id=orderId, email=email)
             if len(order) > 0:
                 update = OrderUpdate.objects.filter(order_id=orderId)
-                updates = []
-                for item in update:
-                    updates.append({'text': item.update_desc, 'time': item.timestamp})
+                updates = [{'text': item.update_desc, 'time': item.timestamp} for item in update]
                 response = json.dumps({"status": "success", "updates": updates, "itemsJson": order[0].items_json},
                                       default=str)
                 return HttpResponse(response)
@@ -115,14 +121,11 @@ def productView(request, myid):
     product = get_object_or_404(Product, id=myid)
     review_list = product.reviews.all().order_by('-created_at')
 
-    # 1. Fetch current cart quantities to maintain button states
     cart = _get_or_create_cart(request)
     cart_items_dict = {item.product_id: item.quantity for item in cart.items.all()}
 
-    # Assign cart quantity to the main product
     product.cart_qty = cart_items_dict.get(product.id, 0)
 
-    # 2. Session-based history tracking
     if 'recently_viewed' not in request.session:
         request.session['recently_viewed'] = []
 
@@ -135,12 +138,10 @@ def productView(request, myid):
     request.session['recently_viewed'] = recently_viewed_ids[:6]
     request.session.modified = True
 
-    # 3. Fetch recently viewed products and map cart quantities
     recently_viewed = Product.objects.filter(id__in=recently_viewed_ids).exclude(id=myid)
     for rv in recently_viewed:
         rv.cart_qty = cart_items_dict.get(rv.id, 0)
 
-    # 4. Fetch recommendations and map cart quantities
     recommendations = Product.objects.filter(category=product.category, stock__gt=0).exclude(id=myid)[:4]
     for rec in recommendations:
         rec.cart_qty = cart_items_dict.get(rec.id, 0)
@@ -169,6 +170,7 @@ def productView(request, myid):
         'cart_items': cart.items.count()
     })
 
+
 @csrf_exempt
 def handlerequest(request):
     try:
@@ -189,12 +191,6 @@ def handlerequest(request):
             print('order was not successful because' + response_dict['RESPMSG'])
     return render(request, 'shop/paymentstatus.html', {'response': response_dict})
 
-
-def _get_or_create_cart(request):
-    if not request.session.session_key:
-        request.session.create()
-    cart, created = Cart.objects.get_or_create(session_key=request.session.session_key)
-    return cart
 
 def add_to_cart(request, product_id):
     if request.method == 'POST':
@@ -219,21 +215,22 @@ def add_to_cart(request, product_id):
             except CartItem.DoesNotExist:
                 product.cart_qty = 0
             cart_items = cart.items.count()
-            return render(request, 'shop/partials/button_actions.html', {'i': product, 'cart_items': cart_items, 'is_htmx': True, 'user': request.user})
+            return render(request, 'shop/partials/button_actions.html',
+                          {'i': product, 'cart_items': cart_items, 'is_htmx': True, 'user': request.user})
 
     referer = request.META.get('HTTP_REFERER', '/')
     base_url = referer.split('#')[0]
     return redirect(f"{base_url}#namepr{product_id}")
 
+
 def cart_detail(request):
     cart = _get_or_create_cart(request)
 
-    # Auto-remove out-of-stock items
-    for item in cart.items.all():
+    for item in cart.items.select_related('product').all():
         if item.product.stock < item.quantity:
             item.delete()
 
-    subtotal = sum(item.product.price * item.quantity for item in cart.items.all())
+    subtotal = sum(item.product.price * item.quantity for item in cart.items.select_related('product').all())
     coupon_id = request.session.get('coupon_id')
     discount_amount = 0
     coupon = None
@@ -248,6 +245,7 @@ def cart_detail(request):
                 discount_amount = subtotal
         except Coupon.DoesNotExist:
             request.session['coupon_id'] = None
+
     total = subtotal - discount_amount
     context = {'cart': cart, 'subtotal': subtotal, 'discount': discount_amount, 'total': total, 'coupon': coupon}
     return render(request, 'shop/cart.html', context)
@@ -274,10 +272,9 @@ def update_cart_item(request, product_id, action):
         current_url = request.headers.get('Hx-Current-Url', '')
         if '/cart/' in current_url:
             return cart_detail(request)
-            
+
         product.cart_qty = cart_item.quantity
         cart_items = cart.items.count()
-        # The context variable 'i' must match what the template expects
         return render(request, 'shop/partials/button_actions.html',
                       {'i': product, 'cart_items': cart_items, 'is_htmx': True, 'user': request.user})
 
@@ -285,10 +282,12 @@ def update_cart_item(request, product_id, action):
     base_url = referer.split('#')[0]
     return redirect(f"{base_url}#namepr{product_id}")
 
+
 def remove_from_cart(request, product_id):
     cart = _get_or_create_cart(request)
     cart_item = get_object_or_404(CartItem, product_id=product_id, cart=cart)
     cart_item.delete()
+    # Fixed potential issue if HTTP_REFERER is missing
     return redirect(request.META.get('HTTP_REFERER', 'CartDetail'))
 
 
@@ -326,30 +325,25 @@ def checkout(request):
 
         try:
             with transaction.atomic():
-                # 1. Lock rows for real-time safety
-                product_ids = [item.product.id for item in cart.items.all()]
+                product_ids = [item.product.id for item in cart.items.select_related('product').all()]
                 locked_products = Product.objects.select_for_update().filter(id__in=product_ids)
                 stock_dict = {p.id: p for p in locked_products}
 
-                # 2. Check stock safely
-                for item in cart.items.all():
+                for item in cart.items.select_related('product').all():
                     p = stock_dict.get(item.product.id)
                     if not p or p.stock < item.quantity:
                         return HttpResponse(f"Sorry, '{item.product.product_name}' just went out of stock!")
 
-                # 3. Deduct stock safely
-                for item in cart.items.all():
+                for item in cart.items.select_related('product').all():
                     p = stock_dict[item.product.id]
                     p.stock -= item.quantity
                     p.save()
 
-                # 4. Save order records
                 order = Orders(items_json=items_json, name=name, email=email, address=address, city=city, state=state,
                                zip_code=zip_code, phone=phone, amount=amount, user=current_user)
                 order.save()
                 OrderUpdate(order_id=order.order_id, update_desc="The order has been placed").save()
 
-                # 5. Clear cart
                 request.session['coupon_id'] = None
                 cart.items.all().delete()
 
@@ -369,7 +363,7 @@ def checkout(request):
             return render(request, 'shop/checkout.html', {'thank': True, 'id': order.order_id})
 
     cart = _get_or_create_cart(request)
-    subtotal = sum(item.product.price * item.quantity for item in cart.items.all())
+    subtotal = sum(item.product.price * item.quantity for item in cart.items.select_related('product').all())
     coupon_id = request.session.get('coupon_id')
     discount_amount = 0
     coupon = None
@@ -414,7 +408,6 @@ def toggle_wishlist(request, product_id):
         else:
             Wishlist.objects.create(user=request.user, product=product)
 
-        # Intercept HTMX request
         if request.headers.get('HX-Request'):
             current_url = request.headers.get('Hx-Current-Url', '')
             if '/wishlist/' in current_url:
@@ -437,4 +430,3 @@ def toggle_wishlist(request, product_id):
 
     referer = request.META.get('HTTP_REFERER', '/')
     return redirect(referer.split('#')[0])
-

@@ -13,7 +13,7 @@
         {% for i in product %}
         <div class="product-card">
             <div class="store-image-wrapper">
-                <img src='/media/{{i.image}}' alt="{{i.product_name}}">
+                <img src='/media/{{i.image}}' alt="{{i.product_name}}" loading="lazy">
             </div>
             <div class="store-card-body">
                 <h5 class="product-title" id="namepr{{i.id}}">{{i.product_name}}</h5>

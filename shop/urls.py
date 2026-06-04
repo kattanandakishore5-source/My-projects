@@ -25,7 +25,7 @@ urlpatterns = [
     path("wishlist/", views.wishlist_view, name="Wishlist"),
     path("toggle-wishlist/<int:product_id>/", views.toggle_wishlist, name="ToggleWishlist"),
 
-    # API URLs (pointing to api_views.py)
+    # API URLs
     path('api/products/', api_views.api_get_products, name='api_get_products'),
     path('api/products/<int:pk>/', api_views.api_get_product_detail, name='ApiGetProductDetail'),
 ]

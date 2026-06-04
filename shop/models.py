@@ -4,7 +4,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Product(models.Model):
-    product_id = models.AutoField
+    # Fixed: Removed the uninstantiated 'product_id = models.AutoField'
+    # Django automatically adds an 'id' AutoField which your views are already using.
     product_name = models.CharField(max_length=50)
     category = models.CharField(max_length=50, default="")
     subcategory = models.CharField(max_length=50, default="")
@@ -18,6 +19,7 @@ class Product(models.Model):
     def __str__(self):
         return self.product_name
 
+
 class Contact(models.Model):
     msg_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50)
@@ -27,6 +29,7 @@ class Contact(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Orders(models.Model):
     order_id = models.AutoField(primary_key=True)
@@ -39,17 +42,19 @@ class Orders(models.Model):
     state = models.CharField(max_length=111)
     zip_code = models.CharField(max_length=111)
     phone = models.CharField(max_length=111, default="")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
-                             null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
 
 class OrderUpdate(models.Model):
-    update_id  = models.AutoField(primary_key=True)
-    order_id = models.IntegerField(default="")
+    update_id = models.AutoField(primary_key=True)
+    # Fixed: Changed default="" to default=0 to prevent ValueError on IntegerField
+    order_id = models.IntegerField(default=0)
     update_desc = models.CharField(max_length=5000)
     timestamp = models.DateField(auto_now_add=True)
 
     def __str__(self):
         return self.update_desc[0:7] + "..."
+
 
 class Cart(models.Model):
     session_key = models.CharField(max_length=255, blank=True, null=True)
@@ -57,6 +62,7 @@ class Cart(models.Model):
 
     def __str__(self):
         return f"Cart {self.id}"
+
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
@@ -72,17 +78,19 @@ DISCOUNT_CHOICES = (
     ('Flat', 'Flat Amount (Rs.)'),
 )
 
+
 class Coupon(models.Model):
     code = models.CharField(max_length=50, unique=True)
     valid_from = models.DateField()
     valid_to = models.DateField()
-    # Choices allow for both Percentage and Flat types
     TYPE_CHOICES = (('Percentage', 'Percentage'), ('Flat', 'Flat'))
     discount_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='Percentage')
     discount_value = models.IntegerField(validators=[MinValueValidator(0)])
     active = models.BooleanField(default=True)
+
     def __str__(self):
         return self.code
+
 
 class Wishlist(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -90,10 +98,11 @@ class Wishlist(models.Model):
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'product')  # Ensure a user can't add the same product multiple times
+        unique_together = ('user', 'product')
 
     def __str__(self):
         return f"{self.user.username} - {self.product.product_name}"
+
 
 class ProductReview(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')

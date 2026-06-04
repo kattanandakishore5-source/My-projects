@@ -1,23 +1,21 @@
 {% if i.cart_qty %}
 <div class="quantity-controls mb-2">
-    <form hx-post="{% url 'UpdateCartItem' i.id 'decrement' %}" hx-target="closest .cart-action" hx-swap="innerHTML"
-        class="m-0">
+    <form hx-post="{% url 'UpdateCartItem' i.id 'decrement' %}" hx-target="closest .cart-action" hx-swap="innerHTML" hx-indicator=".htmx-indicator" class="m-0">
         {% csrf_token %}
-        <button type="submit">-</button>
+        <button type="submit">- <span class="htmx-indicator spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></button>
     </form>
 
     <span class="font-weight-bold text-white">{{ i.cart_qty }}</span>
 
-    <form hx-post="{% url 'UpdateCartItem' i.id 'increment' %}" hx-target="closest .cart-action" hx-swap="innerHTML"
-        class="m-0">
+    <form hx-post="{% url 'UpdateCartItem' i.id 'increment' %}" hx-target="closest .cart-action" hx-swap="innerHTML" hx-indicator=".htmx-indicator" class="m-0">
         {% csrf_token %}
-        <button type="submit">+</button>
+        <button type="submit">+ <span class="htmx-indicator spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></button>
     </form>
 </div>
 {% else %}
-<form hx-post="{% url 'AddToCart' i.id %}" hx-target="closest .cart-action" hx-swap="innerHTML" class="mb-2 w-100">
+<form hx-post="{% url 'AddToCart' i.id %}" hx-target="closest .cart-action" hx-swap="innerHTML" hx-indicator=".htmx-indicator" class="mb-2 w-100">
     {% csrf_token %}
-    <button type="submit" class="btn btn-primary w-100">Add To Cart</button>
+    <button type="submit" class="btn btn-primary w-100">Add To Cart <span class="htmx-indicator spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></button>
 </form>
 {% endif %}
 
@@ -27,10 +25,10 @@
     </a>
 
     {% if user.is_authenticated %}
-    <form hx-post="{% url 'ToggleWishlist' i.id %}" hx-target="closest .cart-action" hx-swap="innerHTML" class="m-0"
+    <form hx-post="{% url 'ToggleWishlist' i.id %}" hx-target="closest .cart-action" hx-swap="innerHTML" hx-indicator=".htmx-indicator" class="m-0"
         style="flex: 1;">
         {% csrf_token %}
-        <button type="submit" class="btn btn-outline-danger w-100">♥ Save</button>
+        <button type="submit" class="btn btn-outline-danger w-100">♥ Save <span class="htmx-indicator spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></button>
     </form>
     {% endif %}
 </div>

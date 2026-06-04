@@ -1,12 +1,8 @@
 from django import forms
 from .models import ProductReview
 
-
-
-
 class CouponApplyForm(forms.Form):
     code = forms.CharField()
-
 
 class ReviewForm(forms.ModelForm):
     class Meta:

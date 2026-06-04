@@ -8,7 +8,8 @@ django.setup()
 
 from shop.models import Product
 
-TOKEN = "8630074417:AAGV8Kqgfn2HgheRgG5Yq0uW9RyEa9JI4fw"
+# Optimized: Removed hardcoded token for security
+TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "YOUR_FALLBACK_TOKEN_HERE")
 
 
 async def check_stock(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -28,6 +29,9 @@ async def check_stock(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     print("Starting Telegram Bot...")
+    if TOKEN == "YOUR_FALLBACK_TOKEN_HERE":
+        print("WARNING: Telegram token not set in environment variables.")
+
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("check_stock", check_stock))
     print("Bot is polling... Press Ctrl+C to stop.")

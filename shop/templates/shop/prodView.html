@@ -15,7 +15,7 @@
 
         <div class="product-detail-right d-flex flex-column align-items-center">
             <div class="product-detail-image content-card-store d-flex justify-content-center align-items-center" style="padding: 2rem; width: 100%; max-width: 350px;">
-                <img src="/media/{{product.image}}" alt="{{product.product_name}}" class="img-fluid"
+                <img src="/media/{{product.image}}" alt="{{product.product_name}}" class="img-fluid" loading="lazy"
                     style="max-height: 250px; width: 100%; object-fit: contain; border-radius: 14px;">
             </div>
 
@@ -34,7 +34,7 @@
             <div class="col-md-3 mb-4">
                 <div class="content-card-store p-3 h-100 d-flex flex-column align-items-center text-center">
                     <a href="/shop/products/{{rec.id}}" class="text-decoration-none">
-                        <img src="/media/{{rec.image}}" alt="{{rec.product_name}}" class="img-fluid mb-3"
+                        <img src="/media/{{rec.image}}" alt="{{rec.product_name}}" class="img-fluid mb-3" loading="lazy"
                              style="height: 150px; width: 100%; object-fit: contain; border-radius: 8px;">
                         <h6 class="text-white font-weight-bold mb-2">{{ rec.product_name }}</h6>
                         <p class="text-primary mb-3">₹{{ rec.price }}</p>
@@ -58,7 +58,7 @@
             <div class="col-md-3 mb-4">
                 <div class="content-card-store p-3 h-100 d-flex flex-column align-items-center text-center" style="opacity: 0.9;">
                     <a href="/shop/products/{{rv.id}}" class="text-decoration-none">
-                        <img src="/media/{{rv.image}}" alt="{{rv.product_name}}" class="img-fluid mb-2"
+                        <img src="/media/{{rv.image}}" alt="{{rv.product_name}}" class="img-fluid mb-2" loading="lazy"
                              style="height: 120px; width: 100%; object-fit: contain; border-radius: 6px;">
                         <h6 class="text-white mb-1" style="font-size: 0.9rem;">{{ rv.product_name }}</h6>
                     </a>

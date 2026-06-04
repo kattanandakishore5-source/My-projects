@@ -1,7 +1,9 @@
+# Python caches
 *.pyc
 __pycache__/
 
 # Local environments / IDE
+venv/
 .venv/
 .idea/
 .vscode/
@@ -9,3 +11,6 @@ __pycache__/
 # Local runtime artifacts
 db.sqlite3
 media/
+
+# Security (Crucial)
+.env

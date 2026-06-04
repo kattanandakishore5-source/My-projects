@@ -1,9 +1,13 @@
 import requests
+import os
+
 
 def send_telegram_message(message):
     """Sends a formatted message to your Telegram bot."""
-    token = "8630074417:AAGV8Kqgfn2HgheRgG5Yq0uW9RyEa9JI4fw"
-    chat_id = "7250990789"
+    # Optimized: Removed hardcoded secrets for security
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "YOUR_FALLBACK_TOKEN")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "YOUR_FALLBACK_CHAT_ID")
+
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
         "chat_id": chat_id,
@@ -14,6 +18,7 @@ def send_telegram_message(message):
         requests.post(url, data=payload, timeout=10)
     except Exception as e:
         print(f"Telegram notification failed: {e}")
+
 
 def send_restock_message(product_name, stock):
     """Specific formatter for low stock alerts."""
