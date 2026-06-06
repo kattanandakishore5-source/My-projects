@@ -111,8 +111,8 @@
 <script>
     // Handles the "Thank You" logic after a successful order
     {% if thank %}
-    alert("Order placed successfully! Order ID is {{ id }}. A notification has been sent to the store owner.");
-    window.location.href = "/shop";
+    showToast("Order placed successfully! Order ID is {{ id }}.", 'success');
+    setTimeout(() => { window.location.href = "/shop"; }, 3000);
     {% endif %}
 </script>
 {% endblock %}

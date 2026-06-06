@@ -23,14 +23,6 @@
     <a href="/shop/products/{{ i.id }}" class="w-100" style="flex: 1;">
         <button type="button" class="btn btn-secondary w-100">View</button>
     </a>
-
-    {% if user.is_authenticated %}
-    <form hx-post="{% url 'ToggleWishlist' i.id %}" hx-target="closest .cart-action" hx-swap="innerHTML" hx-indicator=".htmx-indicator" class="m-0"
-        style="flex: 1;">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-danger w-100">♥ Save <span class="htmx-indicator spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></button>
-    </form>
-    {% endif %}
 </div>
 {% if is_htmx %}
 <span id="cart_count" class="cart-badge ml-1" hx-swap-oob="true">{{ cart_items }}</span>

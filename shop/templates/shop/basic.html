@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <link rel="stylesheet" href="/static/shop/css/style.css">
     <title>{% block title %}My Awesome Cart{% endblock %}</title>
     <style>
@@ -130,6 +131,29 @@
         } else {
             document.querySelector('.navbar').classList.remove('scrolled');
         }
+    });
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<script>
+    function showToast(message, type='success') {
+        Toastify({
+            text: message,
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            style: {
+                background: type === 'success' ? "linear-gradient(to right, #00b09b, #96c93d)" : "linear-gradient(to right, #ff5f6d, #ffc371)",
+            }
+        }).showToast();
+    }
+
+    document.body.addEventListener('showMessage', function(evt){
+        showToast(evt.detail.value || evt.detail);
+    });
+
+    document.body.addEventListener('showError', function(evt){
+        showToast(evt.detail.value || evt.detail, 'error');
     });
 </script>
 {% block js %} {% endblock %}

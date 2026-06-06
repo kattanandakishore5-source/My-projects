@@ -1,0 +1,8 @@
+{% if user.is_authenticated %}
+    <form hx-post="{% url 'ToggleWishlist' i.id %}" hx-target="closest .wishlist-action" hx-swap="innerHTML" class="m-0">
+        {% csrf_token %}
+        <button type="submit" style="background: none; border: none; font-size: 1.8rem; color: {% if i.in_wishlist %}#ff4d4d{% else %}rgba(255,255,255,0.7){% endif %}; cursor: pointer; text-shadow: 0 0 5px rgba(0,0,0,0.5); transition: transform 0.2s; outline: none;">
+            {% if i.in_wishlist %}♥{% else %}♡{% endif %}
+        </button>
+    </form>
+{% endif %}

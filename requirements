@@ -4,3 +4,5 @@ pillow>=10.0.0
 python-telegram-bot>=20.0
 requests>=2.31.0
 pip install python-dotenv
+razorpay
+python-decouple

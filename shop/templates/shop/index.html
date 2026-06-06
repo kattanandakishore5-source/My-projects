@@ -11,12 +11,26 @@
 
     <div class="product-grid">
         {% for i in product %}
-        <div class="product-card">
+        <div class="product-card" style="position: relative;">
             <div class="store-image-wrapper">
+                {% if i.stock <= 0 %}
+                    <span class="badge badge-danger" style="position: absolute; top: 10px; left: 10px; z-index: 10;">Out of Stock</span>
+                {% elif i.stock <= i.low_stock_threshold %}
+                    <span class="badge badge-warning" style="position: absolute; top: 10px; left: 10px; z-index: 10;">Low Stock</span>
+                {% elif "Sale" in i.category %}
+                    <span class="badge badge-success" style="position: absolute; top: 10px; left: 10px; z-index: 10;">Sale</span>
+                {% endif %}
                 <img src='/media/{{i.image}}' alt="{{i.product_name}}" loading="lazy">
+                <div class="wishlist-action" style="position: absolute; top: 5px; right: 5px; z-index: 10;">
+                    {% include 'shop/partials/wishlist_icon.html' with i=i %}
+                </div>
             </div>
             <div class="store-card-body">
                 <h5 class="product-title" id="namepr{{i.id}}">{{i.product_name}}</h5>
+                <div class="mb-2" style="font-size: 0.9rem;">
+                    <span class="text-warning">{{ i.star_rating }}</span>
+                    <span class="text-secondary ml-1">({{ i.reviews.all|length }})</span>
+                </div>
                 <p class="store-product-desc">{{i.desc|slice:"0:53"}}...</p>
                 <div class="store-price-row">
                     <span class="text-secondary">Price</span>

@@ -19,6 +19,14 @@ class Product(models.Model):
     def __str__(self):
         return self.product_name
 
+    @property
+    def star_rating(self):
+        reviews = self.reviews.all()
+        if not reviews:
+            return "☆☆☆☆☆"
+        avg = round(sum(r.rating for r in reviews) / len(reviews))
+        return "★" * avg + "☆" * (5 - avg)
+
 
 class Contact(models.Model):
     msg_id = models.AutoField(primary_key=True)
@@ -42,18 +50,31 @@ class Orders(models.Model):
     state = models.CharField(max_length=111)
     zip_code = models.CharField(max_length=111)
     phone = models.CharField(max_length=111, default="")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True
+    )
+    # New fields
+    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
+    payment_status = models.CharField(
+        max_length=20,
+        choices=[('PENDING', 'Pending'), ('PAID', 'Paid'), ('FAILED', 'Failed')],
+        default='PENDING'
+    )
+
+    def __str__(self):
+        return f"Order #{self.order_id} — {self.name}"
 
 
 class OrderUpdate(models.Model):
     update_id = models.AutoField(primary_key=True)
-    # Fixed: Changed default="" to default=0 to prevent ValueError on IntegerField
     order_id = models.IntegerField(default=0)
     update_desc = models.CharField(max_length=5000)
     timestamp = models.DateField(auto_now_add=True)
 
     def __str__(self):
-        return self.update_desc[0:7] + "..."
+        return f"Update for Order #{self.order_id}"
 
 
 class Cart(models.Model):

@@ -11,7 +11,7 @@ urlpatterns = [
     path("search/", views.search, name="Search"),
     path("products/<int:myid>", views.productView, name="ProductView"),
     path("checkout/", views.checkout, name="Checkout"),
-    path("handlerequest/", views.handlerequest, name="HandleRequest"),
+    path("payment-success/", views.payment_success, name="PaymentSuccess"),
 
     # Backend Cart URLs
     path("add-to-cart/<int:product_id>/", views.add_to_cart, name="AddToCart"),

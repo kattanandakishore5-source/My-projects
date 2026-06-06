@@ -1,0 +1,32 @@
+{% extends 'shop/basic.html' %}
+{% block title%} Payment Status - My Awesome Cart{% endblock %}
+{% block body %}
+<div class="store-container my-4 text-center">
+    <div class="content-card-store h-100 p-5">
+        {% if status == 'success' %}
+            <div class="mb-4">
+                <i class="fa fa-check-circle text-success" style="font-size: 4rem;"></i>
+            </div>
+            <h2 class="text-success mb-3 font-weight-bold">Payment Successful!</h2>
+            <p class="text-white">Your payment for Order #{{ order_id }} has been received successfully.</p>
+            <p class="text-secondary">Thank you for shopping with My Awesome Cart!</p>
+            <a href="/shop/" class="btn btn-cta mt-4">Continue Shopping</a>
+        {% elif status == 'failed' %}
+            <div class="mb-4">
+                <i class="fa fa-times-circle text-danger" style="font-size: 4rem;"></i>
+            </div>
+            <h2 class="text-danger mb-3 font-weight-bold">Payment Failed</h2>
+            <p class="text-white">Unfortunately, we could not verify your payment for Order #{{ order_id }}.</p>
+            <p class="text-secondary">Please try again or contact support if the issue persists.</p>
+            <a href="/shop/" class="btn btn-secondary mt-4">Return to Home</a>
+        {% else %}
+            <div class="mb-4">
+                <i class="fa fa-exclamation-triangle text-warning" style="font-size: 4rem;"></i>
+            </div>
+            <h2 class="text-warning mb-3 font-weight-bold">Payment Status Unknown</h2>
+            <p class="text-white">Please check your order history to confirm the payment status.</p>
+            <a href="/shop/" class="btn btn-secondary mt-4">Return to Home</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -10,8 +10,8 @@ from django.http import HttpResponse
 from django.utils import timezone
 from .forms import CouponApplyForm, ReviewForm
 from django.contrib.auth.decorators import login_required
-
-MERCHANT_KEY = 'Your-Merchant-Key-Here'
+from django.conf import settings
+import razorpay
 
 
 def _get_or_create_cart(request):
@@ -29,12 +29,17 @@ def index(request):
     from operator import attrgetter
 
     allProds = []
-    all_products = Product.objects.filter(stock__gt=0).order_by('category')
+    all_products = Product.objects.filter(stock__gt=0).prefetch_related('reviews').order_by('category')
+
+    user_wishlist_ids = set()
+    if request.user.is_authenticated:
+        user_wishlist_ids = set(Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True))
 
     for cat, prod_group in groupby(all_products, key=attrgetter('category')):
         prod = list(prod_group)
         for p in prod:
             p.cart_qty = cart_items_dict.get(p.id, 0)
+            p.in_wishlist = p.id in user_wishlist_ids
         n = len(prod)
         nSlides = n // 4 + ceil((n / 4) - (n // 4))
         if n != 0:
@@ -54,6 +59,10 @@ def search(request):
     from itertools import groupby
     from operator import attrgetter
 
+    user_wishlist_ids = set()
+    if request.user.is_authenticated:
+        user_wishlist_ids = set(Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True))
+
     # Optimized: Removed Python-side loop filtering. Used DB-level ORM lookups.
     if len(query) >= 4:
         all_products = Product.objects.filter(
@@ -62,12 +71,13 @@ def search(request):
             Q(category__icontains=query) |
             Q(subcategory__icontains=query),
             stock__gt=0
-        ).order_by('category')
+        ).prefetch_related('reviews').order_by('category')
 
         for cat, prod_group in groupby(all_products, key=attrgetter('category')):
             prod = list(prod_group)
             for p in prod:
                 p.cart_qty = cart_items_dict.get(p.id, 0)
+                p.in_wishlist = p.id in user_wishlist_ids
 
             n = len(prod)
             nSlides = n // 4 + ceil((n / 4) - (n // 4))
@@ -77,8 +87,11 @@ def search(request):
     params = {'allProds': allProds, "msg": ""}
     if len(allProds) == 0 or len(query) < 4:
         params = {'msg': "Please make sure to enter a relevant search query of at least 4 characters"}
-
-    return render(request, 'shop/search.html', params)
+        
+    response = render(request, 'shop/search.html', params)
+    if params['msg'] and request.headers.get('HX-Request'):
+        response['HX-Trigger'] = json.dumps({"showError": params['msg']})
+    return response
 
 
 def about(request):
@@ -138,11 +151,11 @@ def productView(request, myid):
     request.session['recently_viewed'] = recently_viewed_ids[:6]
     request.session.modified = True
 
-    recently_viewed = Product.objects.filter(id__in=recently_viewed_ids).exclude(id=myid)
+    recently_viewed = Product.objects.filter(id__in=recently_viewed_ids).prefetch_related('reviews').exclude(id=myid)
     for rv in recently_viewed:
         rv.cart_qty = cart_items_dict.get(rv.id, 0)
 
-    recommendations = Product.objects.filter(category=product.category, stock__gt=0).exclude(id=myid)[:4]
+    recommendations = Product.objects.filter(category=product.category, stock__gt=0).prefetch_related('reviews').exclude(id=myid)[:4]
     for rec in recommendations:
         rec.cart_qty = cart_items_dict.get(rec.id, 0)
 
@@ -172,24 +185,41 @@ def productView(request, myid):
 
 
 @csrf_exempt
-def handlerequest(request):
-    try:
-        from PayTm import Checksum
-    except ModuleNotFoundError:
-        return HttpResponse("PayTM dependencies are not installed on this server.")
-    form = request.POST
-    response_dict = {}
-    for i in form.keys():
-        response_dict[i] = form[i]
-        if i == 'CHECKSUMHASH':
-            checksum = form[i]
-    verify = Checksum.verify_checksum(response_dict, MERCHANT_KEY, checksum)
-    if verify:
-        if response_dict['RESPCODE'] == '01':
-            print('order successful')
-        else:
-            print('order was not successful because' + response_dict['RESPMSG'])
-    return render(request, 'shop/paymentstatus.html', {'response': response_dict})
+def payment_success(request):
+    if request.method == "POST":
+        data = request.POST
+        razorpay_payment_id = data.get('razorpay_payment_id')
+        razorpay_order_id = data.get('razorpay_order_id')
+        razorpay_signature = data.get('razorpay_signature')
+
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+        try:
+            client.utility.verify_payment_signature({
+                'razorpay_order_id': razorpay_order_id,
+                'razorpay_payment_id': razorpay_payment_id,
+                'razorpay_signature': razorpay_signature
+            })
+            
+            # Payment signature is verified
+            order = Orders.objects.filter(razorpay_order_id=razorpay_order_id).first()
+            if order:
+                order.payment_status = 'PAID'
+                order.save()
+                OrderUpdate(order_id=order.order_id, update_desc="The payment was successful and order is confirmed").save()
+            return render(request, 'shop/payment_status.html', {'status': 'success', 'order_id': order.order_id if order else ''})
+            
+        except razorpay.errors.SignatureVerificationError:
+            order = Orders.objects.filter(razorpay_order_id=razorpay_order_id).first()
+            if order:
+                order.payment_status = 'FAILED'
+                order.save()
+                OrderUpdate(order_id=order.order_id, update_desc="Payment signature verification failed").save()
+            return render(request, 'shop/payment_status.html', {'status': 'failed', 'order_id': order.order_id if order else ''})
+        except Exception as e:
+            return HttpResponse(f"Error: {str(e)}")
+    
+    return HttpResponse("Invalid Request")
 
 
 def add_to_cart(request, product_id):
@@ -215,8 +245,10 @@ def add_to_cart(request, product_id):
             except CartItem.DoesNotExist:
                 product.cart_qty = 0
             cart_items = cart.items.count()
-            return render(request, 'shop/partials/button_actions.html',
+            response = render(request, 'shop/partials/button_actions.html',
                           {'i': product, 'cart_items': cart_items, 'is_htmx': True, 'user': request.user})
+            response['HX-Trigger'] = json.dumps({"showMessage": f"Added {product.product_name} to cart"})
+            return response
 
     referer = request.META.get('HTTP_REFERER', '/')
     base_url = referer.split('#')[0]
@@ -351,16 +383,35 @@ def checkout(request):
             return HttpResponse("An error occurred during checkout. Please try again.")
 
         try:
-            from PayTm import Checksum
-            param_dict = {
-                'MID': 'Your-Merchant-Id-Here', 'ORDER_ID': str(order.order_id), 'TXN_AMOUNT': str(amount),
-                'CUST_ID': email, 'INDUSTRY_TYPE_ID': 'Retail', 'WEBSITE': 'WEBSTAGING', 'CHANNEL_ID': 'WEB',
-                'CALLBACK_URL': 'http://127.0.0.1:8000/shop/handlerequest/',
+            amount_in_paise = int(float(amount) * 100)
+            client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+            razorpay_order = client.order.create({
+                'amount': amount_in_paise,
+                'currency': 'INR',
+                'payment_capture': '1'
+            })
+            order.razorpay_order_id = razorpay_order['id']
+            order.save()
+            
+            # The URL host and port should ideally come from request, but we will use the host from the request
+            host = request.get_host()
+            scheme = request.is_secure() and "https" or "http"
+            callback_url = f"{scheme}://{host}/shop/payment-success/"
+            
+            context = {
+                'order_id': order.order_id,
+                'razorpay_order_id': razorpay_order['id'],
+                'razorpay_merchant_key': settings.RAZORPAY_KEY_ID,
+                'razorpay_amount': amount_in_paise,
+                'currency': 'INR',
+                'callback_url': callback_url,
+                'name': name,
+                'email': email,
+                'phone': phone,
             }
-            param_dict['CHECKSUMHASH'] = Checksum.generate_checksum(param_dict, MERCHANT_KEY)
-            return render(request, 'shop/paytm.html', {'param_dict': param_dict})
-        except ModuleNotFoundError:
-            return render(request, 'shop/checkout.html', {'thank': True, 'id': order.order_id})
+            return render(request, 'shop/razorpay_checkout.html', context)
+        except Exception as e:
+            return HttpResponse(f"Error creating Razorpay order: {str(e)}")
 
     cart = _get_or_create_cart(request)
     subtotal = sum(item.product.price * item.quantity for item in cart.items.select_related('product').all())
@@ -405,28 +456,27 @@ def toggle_wishlist(request, product_id):
         wishlist_item = Wishlist.objects.filter(user=request.user, product=product).first()
         if wishlist_item:
             wishlist_item.delete()
+            msg = f"Removed {product.product_name} from wishlist"
+            product.in_wishlist = False
         else:
             Wishlist.objects.create(user=request.user, product=product)
+            msg = f"Added {product.product_name} to wishlist"
+            product.in_wishlist = True
 
         if request.headers.get('HX-Request'):
             current_url = request.headers.get('Hx-Current-Url', '')
             if '/wishlist/' in current_url:
-                return wishlist_view(request)
+                response = wishlist_view(request)
+                response['HX-Trigger'] = json.dumps({"showMessage": msg})
+                return response
 
-            cart = _get_or_create_cart(request)
-            try:
-                cart_item = CartItem.objects.get(cart=cart, product=product)
-                product.cart_qty = cart_item.quantity
-            except CartItem.DoesNotExist:
-                product.cart_qty = 0
-
-            cart_items = cart.items.count()
-            return render(request, 'shop/partials/button_actions.html', {
+            response = render(request, 'shop/partials/wishlist_icon.html', {
                 'i': product,
-                'cart_items': cart_items,
                 'is_htmx': True,
                 'user': request.user
             })
+            response['HX-Trigger'] = json.dumps({"showMessage": msg})
+            return response
 
     referer = request.META.get('HTTP_REFERER', '/')
     return redirect(referer.split('#')[0])
