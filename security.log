@@ -1,0 +1,27 @@
+[2026-06-07 13:29:08,859] INFO axes.apps AXES: BEGIN version 8.3.1, blocking by ip_address
+[2026-06-07 13:29:19,816] INFO axes.apps AXES: BEGIN version 8.3.1, blocking by ip_address
+[2026-06-07 13:29:31,220] INFO axes.apps AXES: BEGIN version 8.3.1, blocking by ip_address
+[2026-06-07 13:31:58,373] INFO axes.apps AXES: BEGIN version 8.3.1, blocking by ip_address
+[2026-06-07 13:31:59,084] INFO axes.apps AXES: BEGIN version 8.3.1, blocking by ip_address
+[2026-06-07 13:40:15,141] INFO axes.apps AXES: BEGIN version 8.3.1, blocking by ip_address
+[2026-06-07 13:40:29,827] INFO axes.apps AXES: BEGIN version 8.3.1, blocking by ip_address
+[2026-06-07 13:40:41,357] INFO axes.apps AXES: BEGIN version 8.3.1, blocking by ip_address
+[2026-06-07 13:41:46,903] INFO axes.handlers.database AXES: Successful login by {username: "********************", ip_address: "********************", user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36", path_info: "/account/login/"}.
+[2026-06-07 13:41:46,905] INFO axes.handlers.database AXES: Cleaned up 0 expired access attempts from database that were older than 2026-06-07 07:11:46.193406+00:00
+[2026-06-07 13:41:46,917] INFO axes.handlers.database AXES: Reset 0 access attempts from database.
+[2026-06-07 13:41:46,918] INFO axes.handlers.database AXES: Deleted 0 failed login attempts by {username: "********************", ip_address: "********************", user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36", path_info: "/account/login/"} from database.
+[2026-06-07 13:50:40,856] INFO axes.apps AXES: BEGIN version 8.3.1, blocking by ip_address
+[2026-06-07 13:51:39,671] INFO axes.handlers.database AXES: Cleaned up 0 expired access attempts from database that were older than 2026-06-07 07:21:39.667988+00:00
+[2026-06-07 13:51:39,671] INFO axes.handlers.database AXES: Successful logout by {username: "********************", ip_address: "********************", user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36", path_info: "/logout/"}.
+[2026-06-07 13:51:57,224] INFO axes.handlers.database AXES: Successful login by {username: "********************", ip_address: "********************", user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36", path_info: "/account/login/"}.
+[2026-06-07 13:51:57,226] INFO axes.handlers.database AXES: Cleaned up 0 expired access attempts from database that were older than 2026-06-07 07:21:56.472735+00:00
+[2026-06-07 13:51:57,235] INFO axes.handlers.database AXES: Reset 0 access attempts from database.
+[2026-06-07 13:51:57,236] INFO axes.handlers.database AXES: Deleted 0 failed login attempts by {username: "********************", ip_address: "********************", user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36", path_info: "/account/login/"} from database.
+[2026-06-07 14:23:03,979] INFO axes.apps AXES: BEGIN version 8.3.1, blocking by ip_address
+[2026-06-07 14:23:04,764] INFO axes.apps AXES: BEGIN version 8.3.1, blocking by ip_address
+[2026-06-07 14:23:54,807] INFO axes.handlers.database AXES: Cleaned up 0 expired access attempts from database that were older than 2026-06-07 07:53:54.804214+00:00
+[2026-06-07 14:23:54,807] INFO axes.handlers.database AXES: Successful logout by {username: "********************", ip_address: "********************", user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36", path_info: "/logout/"}.
+[2026-06-07 14:24:18,102] INFO axes.handlers.database AXES: Successful login by {username: "********************", ip_address: "********************", user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36", path_info: "/account/login/"}.
+[2026-06-07 14:24:18,103] INFO axes.handlers.database AXES: Cleaned up 0 expired access attempts from database that were older than 2026-06-07 07:54:17.398305+00:00
+[2026-06-07 14:24:18,113] INFO axes.handlers.database AXES: Reset 0 access attempts from database.
+[2026-06-07 14:24:18,113] INFO axes.handlers.database AXES: Deleted 0 failed login attempts by {username: "********************", ip_address: "********************", user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36", path_info: "/account/login/"} from database.

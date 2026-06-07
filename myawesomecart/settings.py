@@ -22,6 +22,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '9h_#wy*6)%#ug3-uv@7xlryan5a36r
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if os.environ.get('DJANGO_ALLOWED_HOSTS') else []
+CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host]
 
 # Application definition
 INSTALLED_APPS = [
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -103,6 +105,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Managing media
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -165,20 +168,15 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
-        'security_file': {
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'security.log'),
-            'formatter': 'verbose',
-        },
     },
     'loggers': {
         'django.security': {
-            'handlers': ['console', 'security_file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
         },
         'axes': {
-            'handlers': ['console', 'security_file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
         },
