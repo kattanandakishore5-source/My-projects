@@ -1,7 +1,8 @@
-venv/
 .env
-db.sqlite3
 __pycache__/
 *.pyc
 media/
+.git
+db.sqlite3
+venv/
 staticfiles/
