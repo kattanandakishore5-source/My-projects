@@ -11,6 +11,13 @@
 
         <form method="post">
             {% csrf_token %}
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-danger bg-dark border-danger text-danger mb-3">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
             <div class="store-list-group">
                 {% for field in form %}
                     <div class="form-group mb-3">
@@ -35,6 +42,9 @@
         <div class="mt-4 text-center border-top border-secondary pt-3">
             <p class="text-secondary">Don't have an account? 
                 <a href="{% url 'signup' %}" class="text-primary font-weight-bold">Sign up</a>
+            </p>
+            <p class="mt-2">
+                <a href="{% url 'password_reset' %}" class="text-secondary">Forgot your password?</a>
             </p>
         </div>
     </div>

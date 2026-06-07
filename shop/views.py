@@ -5,13 +5,17 @@ from django.db import transaction
 from django.db.models import Q
 from math import ceil
 import json
+import logging
 from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
+from django.views.decorators.http import require_POST
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from .forms import CouponApplyForm, ReviewForm
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 import razorpay
+
+logger = logging.getLogger(__name__)
 
 
 def _get_or_create_cart(request):
@@ -105,8 +109,8 @@ def contact(request):
         email = request.POST.get('email', '')
         phone = request.POST.get('phone', '')
         desc = request.POST.get('desc', '')
-        contact = Contact(name=name, email=email, phone=phone, desc=desc)
-        contact.save()
+        contact_obj = Contact(name=name, email=email, phone=phone, desc=desc)
+        contact_obj.save()
         thank = True
     return render(request, 'shop/contact.html', {'thank': thank})
 
@@ -217,11 +221,13 @@ def payment_success(request):
                 OrderUpdate(order_id=order.order_id, update_desc="Payment signature verification failed").save()
             return render(request, 'shop/payment_status.html', {'status': 'failed', 'order_id': order.order_id if order else ''})
         except Exception as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error(f"Payment processing error: {str(e)}")
+            return HttpResponse("An error occurred while processing your payment. Please try again.")
     
     return HttpResponse("Invalid Request")
 
 
+@require_POST
 def add_to_cart(request, product_id):
     if request.method == 'POST':
         cart = _get_or_create_cart(request)
@@ -234,6 +240,21 @@ def add_to_cart(request, product_id):
                     cart_item.quantity += 1
                     cart_item.save()
 
+        # JSON response for Vanilla JS fetch()
+        if 'application/json' in request.headers.get('Accept', ''):
+            try:
+                cart_item = CartItem.objects.get(cart=cart, product=product)
+                qty = cart_item.quantity
+            except CartItem.DoesNotExist:
+                qty = 0
+            return JsonResponse({
+                'status': 'ok',
+                'cart_qty': qty,
+                'cart_count': cart.items.count(),
+                'message': f'Added {product.product_name} to cart'
+            })
+
+        # Legacy HTMX fallback
         if request.headers.get('HX-Request'):
             current_url = request.headers.get('Hx-Current-Url', '')
             if '/wishlist/' in current_url:
@@ -283,6 +304,7 @@ def cart_detail(request):
     return render(request, 'shop/cart.html', context)
 
 
+@require_POST
 def update_cart_item(request, product_id, action):
     cart = _get_or_create_cart(request)
     cart_item = get_object_or_404(CartItem, product_id=product_id, cart=cart)
@@ -300,6 +322,16 @@ def update_cart_item(request, product_id, action):
         else:
             cart_item.save()
 
+    # JSON response for Vanilla JS fetch()
+    if 'application/json' in request.headers.get('Accept', ''):
+        return JsonResponse({
+            'status': 'ok',
+            'cart_qty': cart_item.quantity,
+            'cart_count': cart.items.count(),
+            'message': f'Cart updated'
+        })
+
+    # Legacy HTMX fallback
     if request.headers.get('HX-Request'):
         current_url = request.headers.get('Hx-Current-Url', '')
         if '/cart/' in current_url:
@@ -315,6 +347,7 @@ def update_cart_item(request, product_id, action):
     return redirect(f"{base_url}#namepr{product_id}")
 
 
+@require_POST
 def remove_from_cart(request, product_id):
     cart = _get_or_create_cart(request)
     cart_item = get_object_or_404(CartItem, product_id=product_id, cart=cart)
@@ -323,6 +356,7 @@ def remove_from_cart(request, product_id):
     return redirect(request.META.get('HTTP_REFERER', 'CartDetail'))
 
 
+@require_POST
 def coupon_apply(request):
     now = timezone.now().date()
     if request.method == "POST":
@@ -340,6 +374,7 @@ def coupon_apply(request):
     return redirect('CartDetail')
 
 
+@login_required
 def checkout(request):
     if request.method == "POST":
         items_json = request.POST.get('itemsJson', '')
@@ -411,7 +446,8 @@ def checkout(request):
             }
             return render(request, 'shop/razorpay_checkout.html', context)
         except Exception as e:
-            return HttpResponse(f"Error creating Razorpay order: {str(e)}")
+            logger.error(f"Razorpay order creation error: {str(e)}")
+            return HttpResponse("An error occurred while initiating payment. Please try again.")
 
     cart = _get_or_create_cart(request)
     subtotal = sum(item.product.price * item.quantity for item in cart.items.select_related('product').all())
@@ -457,12 +493,22 @@ def toggle_wishlist(request, product_id):
         if wishlist_item:
             wishlist_item.delete()
             msg = f"Removed {product.product_name} from wishlist"
-            product.in_wishlist = False
+            in_wishlist = False
         else:
             Wishlist.objects.create(user=request.user, product=product)
             msg = f"Added {product.product_name} to wishlist"
-            product.in_wishlist = True
+            in_wishlist = True
 
+        # JSON response for Vanilla JS fetch()
+        if 'application/json' in request.headers.get('Accept', ''):
+            return JsonResponse({
+                'status': 'ok',
+                'in_wishlist': in_wishlist,
+                'message': msg
+            })
+
+        # Legacy HTMX fallback
+        product.in_wishlist = in_wishlist
         if request.headers.get('HX-Request'):
             current_url = request.headers.get('Hx-Current-Url', '')
             if '/wishlist/' in current_url:

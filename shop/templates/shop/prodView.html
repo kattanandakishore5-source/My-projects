@@ -3,70 +3,131 @@
 {% block title%} {{product.product_name}} - My Awesome Cart{% endblock %}
 
 {% block body %}
-<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+{% load static %}
 
-<div class="store-container my-4">
-    <div class="product-view">
-        <div class="product-detail-info">
-            <h1 class="product-title font-weight-bold" style="font-size: 28px;">{{product.product_name}}</h1>
-            <h3 class="product-price my-3 pb-3 border-bottom text-primary">₹{{product.price}}</h3>
-            <p class="product-desc mt-3 text-secondary" style="font-size: 1.1rem; line-height: 1.6;">{{product.desc}}</p>
-        </div>
+<div class="store-container">
 
-        <div class="product-detail-right d-flex flex-column align-items-center">
-            <div class="product-detail-image content-card-store d-flex justify-content-center align-items-center" style="padding: 2rem; width: 100%; max-width: 350px;">
-                <img src="/media/{{product.image}}" alt="{{product.product_name}}" class="img-fluid" loading="lazy"
-                    style="max-height: 250px; width: 100%; object-fit: contain; border-radius: 14px;">
+    <!-- ═══════════════════════════════════════════════════════════════
+         BENTO GRID — 5-Box Product Detail Layout
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="bento-product-detail">
+
+        <!-- BOX 1 — Hero Image (spans 2 cols, 2 rows) -->
+        <div class="bento-box bento-hero hover-zoom" id="product-hero-image">
+            {% if product.stock <= 0 %}
+                <span class="stock-badge stock-badge--danger">Out of Stock</span>
+            {% elif product.stock <= product.low_stock_threshold %}
+                <span class="stock-badge stock-badge--warning">Low Stock</span>
+            {% endif %}
+
+            <div class="wishlist-float">
+                {% include 'shop/partials/wishlist_icon.html' with i=product %}
             </div>
 
-            <div class="cart-action mt-4 w-100" style="max-width: 350px;">
-                {% with i=product %}
-                {% include 'shop/partials/button_actions.html' %}
-                {% endwith %}
+            <img src="/media/{{product.image}}" alt="{{product.product_name}}" loading="eager"
+                 style="max-height: 400px; width: 100%; object-fit: contain; border-radius: 12px;">
+        </div>
+
+        <!-- BOX 2 — Core Details (top right) -->
+        <div class="bento-box bento-details" id="product-core-details">
+            <h1 class="product-name-hero">{{product.product_name}}</h1>
+            <div class="product-price-hero">₹{{product.price}}</div>
+
+            <div style="margin-top: 0.75rem;">
+                <span class="category-tag">{{product.category}}</span>
+                {% if product.subcategory %}
+                    <span class="category-tag">{{product.subcategory}}</span>
+                {% endif %}
+            </div>
+
+            <div class="stock-indicator" style="margin-top: 1.25rem;">
+                {% if product.stock <= 0 %}
+                    <span class="stock-dot stock-dot--out"></span>
+                    <span class="text-danger">Out of stock</span>
+                {% elif product.stock <= product.low_stock_threshold %}
+                    <span class="stock-dot stock-dot--low"></span>
+                    <span class="text-warning">Only {{product.stock}} left</span>
+                {% else %}
+                    <span class="stock-dot stock-dot--ok"></span>
+                    <span class="text-success">In stock</span>
+                {% endif %}
             </div>
         </div>
-    </div>
 
-    <div class="recommendations-section mt-5">
-        <h3 class="text-primary mb-4 font-weight-bold">Similar Products</h3>
-        <div class="row">
-            {% for rec in recommendations %}
-            <div class="col-md-3 mb-4">
-                <div class="content-card-store p-3 h-100 d-flex flex-column align-items-center text-center">
-                    <a href="/shop/products/{{rec.id}}" class="text-decoration-none">
-                        <img src="/media/{{rec.image}}" alt="{{rec.product_name}}" class="img-fluid mb-3" loading="lazy"
-                             style="height: 150px; width: 100%; object-fit: contain; border-radius: 8px;">
-                        <h6 class="text-white font-weight-bold mb-2">{{ rec.product_name }}</h6>
-                        <p class="text-primary mb-3">₹{{ rec.price }}</p>
-                    </a>
-                    <div class="cart-action w-100">
-                        {% with i=rec %}
-                        {% include 'shop/partials/button_actions.html' %}
-                        {% endwith %}
+        <!-- BOX 3 — Action Center (middle right) -->
+        <div class="bento-box bento-actions" id="product-action-center">
+            <h6 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">
+                Quick Actions
+            </h6>
+
+            {% if product.cart_qty %}
+                <div id="detail-qty-container">
+                    <div class="qty-selector mb-3">
+                        <button class="btn-qty-detail" data-product-id="{{ product.id }}" data-action="decrement" aria-label="Decrease quantity">&minus;</button>
+                        <span class="qty-value qty-display">{{ product.cart_qty }}</span>
+                        <button class="btn-qty-detail" data-product-id="{{ product.id }}" data-action="increment" aria-label="Increase quantity">+</button>
                     </div>
                 </div>
-            </div>
-            {% endfor %}
+                <button class="btn-add-cart-hero" data-product-id="{{ product.id }}">✓ In Cart</button>
+            {% else %}
+                <div id="detail-qty-container" style="display: none;"></div>
+                {% if product.stock > 0 %}
+                    <button class="btn-add-cart-hero" data-product-id="{{ product.id }}">Add To Cart</button>
+                {% else %}
+                    <button class="btn-add-cart-hero" disabled>Out of Stock</button>
+                {% endif %}
+            {% endif %}
         </div>
+
+        <!-- BOX 4 — Metadata: Ratings (bottom right) -->
+        <div class="bento-box bento-meta" id="product-metadata">
+            <h6 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">
+                Ratings & Reviews
+            </h6>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;">
+                <span class="star-display star-display--lg">{{ product.star_rating }}</span>
+                <span class="text-secondary" style="font-size: 0.9rem;">
+                    ({{ product.reviews.all|length }} review{{ product.reviews.all|length|pluralize }})
+                </span>
+            </div>
+            <p class="text-secondary" style="font-size: 0.82rem; margin: 0;">
+                Published {{ product.pub_date|date:"M d, Y" }}
+            </p>
+        </div>
+
+        <!-- BOX 5 — Description (full width bottom-left) -->
+        <div class="bento-box bento-desc" id="product-description">
+            <h6 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">
+                About This Product
+            </h6>
+            <p style="font-size: 1.05rem; line-height: 1.7; color: var(--text-secondary); margin: 0;">
+                {{product.desc}}
+            </p>
+        </div>
+
     </div>
 
-    {% if recently_viewed %}
-    <div class="recently-viewed-section mt-5">
-        <h3 class="text-secondary mb-4 font-weight-bold" style="font-size: 1.5rem;">Recently Viewed</h3>
-        <div class="row">
-            {% for rv in recently_viewed %}
-            <div class="col-md-3 mb-4">
-                <div class="content-card-store p-3 h-100 d-flex flex-column align-items-center text-center" style="opacity: 0.9;">
-                    <a href="/shop/products/{{rv.id}}" class="text-decoration-none">
-                        <img src="/media/{{rv.image}}" alt="{{rv.product_name}}" class="img-fluid mb-2" loading="lazy"
-                             style="height: 120px; width: 100%; object-fit: contain; border-radius: 6px;">
-                        <h6 class="text-white mb-1" style="font-size: 0.9rem;">{{ rv.product_name }}</h6>
-                    </a>
-                    <div class="cart-action w-100 mt-2">
-                        {% with i=rv %}
-                        {% include 'shop/partials/button_actions.html' %}
-                        {% endwith %}
+    <!-- ═══════════════════════════════════════════════════════════════
+         SIMILAR PRODUCTS
+         ═══════════════════════════════════════════════════════════════ -->
+    {% if recommendations %}
+    <div style="margin-top: 3rem;">
+        <div class="section-header">
+            <h3>Similar Products</h3>
+        </div>
+        <div class="bento-recs-grid">
+            {% for rec in recommendations %}
+            <div class="rec-card">
+                <a href="/shop/products/{{rec.id}}" style="text-decoration: none; color: inherit;">
+                    <img src="/media/{{rec.image}}" alt="{{rec.product_name}}" loading="lazy">
+                    <div class="rec-name">{{ rec.product_name }}</div>
+                    <div class="rec-price">₹{{ rec.price }}</div>
+                    <div style="margin: 0.4rem 0;">
+                        <span class="star-display">{{ rec.star_rating }}</span>
                     </div>
+                </a>
+                <div class="cart-action" style="margin-top: auto; padding-top: 0.75rem;">
+                    {% include 'shop/partials/button_actions.html' with i=rec %}
                 </div>
             </div>
             {% endfor %}
@@ -74,86 +135,148 @@
     </div>
     {% endif %}
 
-    <hr class="border-secondary my-5">
-    <h3 class="text-primary mb-4 font-weight-bold">Customer Reviews</h3>
+    <!-- ═══════════════════════════════════════════════════════════════
+         RECENTLY VIEWED
+         ═══════════════════════════════════════════════════════════════ -->
+    {% if recently_viewed %}
+    <div style="margin-top: 3rem;">
+        <div class="section-header">
+            <h3 style="color: var(--text-secondary);">Recently Viewed</h3>
+        </div>
+        <div class="bento-recs-grid">
+            {% for rv in recently_viewed %}
+            <div class="rec-card" style="opacity: 0.85;">
+                <a href="/shop/products/{{rv.id}}" style="text-decoration: none; color: inherit;">
+                    <img src="/media/{{rv.image}}" alt="{{rv.product_name}}" loading="lazy" style="height: 120px;">
+                    <div class="rec-name" style="font-size: 0.85rem;">{{ rv.product_name }}</div>
+                </a>
+                <div class="cart-action" style="margin-top: auto; padding-top: 0.5rem;">
+                    {% include 'shop/partials/button_actions.html' with i=rv %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
-    <div class="row">
-        <div class="col-md-5 mb-4 mr-lg-4">
-            {% if user.is_authenticated %}
-            <div class="content-card-store p-4">
-                <h5 class="mb-3 text-white">Write a Review</h5>
-                <form method="POST" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="form-group mb-3">
-                        <label class="text-secondary small">Rating (1-5)</label>
-                        {{ form.rating }}
-                    </div>
-                    <div class="form-group mb-3">
-                        <label class="text-secondary small">Your Experience</label>
-                        {{ form.review_text }}
-                    </div>
-                    <div class="form-group mb-3">
-                        <label class="text-secondary small">Attach Image</label><br>
-                        {{ form.image }}
-                    </div>
-                    <button type="submit" class="btn btn-primary-store w-100 mt-2">Submit Review</button>
-                </form>
-            </div>
-            {% else %}
-            <div class="content-card-store p-4 text-center">
-                <p class="text-secondary mb-0">Please <a href="{% url 'login' %}" class="text-primary">Login</a> to review.</p>
-            </div>
-            {% endif %}
+    <!-- ═══════════════════════════════════════════════════════════════
+         CUSTOMER REVIEWS
+         ═══════════════════════════════════════════════════════════════ -->
+    <div style="margin-top: 3rem; border-top: 1px solid var(--border-color); padding-top: 2.5rem;">
+        <div class="section-header">
+            <h3>Customer Reviews</h3>
         </div>
 
-        <div class="col-md-6 ml-lg-4">
-            <div class="reviews-list">
+        <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 24px; align-items: start;">
+
+            <!-- Write a Review -->
+            <div>
+                {% if user.is_authenticated %}
+                <div class="bento-box">
+                    <h5 style="margin-bottom: 1.25rem; font-weight: 600;">Write a Review</h5>
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <!-- Interactive Star Rating -->
+                        <div style="margin-bottom: 1.25rem;">
+                            <label style="color: var(--text-secondary); font-size: 0.82rem; display: block; margin-bottom: 8px;">Your Rating</label>
+                            <input type="hidden" name="rating" id="id_rating" value="5">
+                            <div class="star-rating-input">
+                                <input type="radio" id="star5" name="star_visual" value="5" checked>
+                                <label for="star5" title="5 stars">★</label>
+                                <input type="radio" id="star4" name="star_visual" value="4">
+                                <label for="star4" title="4 stars">★</label>
+                                <input type="radio" id="star3" name="star_visual" value="3">
+                                <label for="star3" title="3 stars">★</label>
+                                <input type="radio" id="star2" name="star_visual" value="2">
+                                <label for="star2" title="2 stars">★</label>
+                                <input type="radio" id="star1" name="star_visual" value="1">
+                                <label for="star1" title="1 star">★</label>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1.25rem;">
+                            <label style="color: var(--text-secondary); font-size: 0.82rem; display: block; margin-bottom: 8px;">Your Experience</label>
+                            {{ form.review_text }}
+                        </div>
+
+                        <div style="margin-bottom: 1.25rem;">
+                            <label style="color: var(--text-secondary); font-size: 0.82rem; display: block; margin-bottom: 8px;">Attach Image</label>
+                            {{ form.image }}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" style="padding: 12px; font-weight: 600;">Submit Review</button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="bento-box" style="text-align: center; padding: 2.5rem 1.5rem;">
+                    <p class="text-secondary" style="margin: 0;">
+                        Please <a href="{% url 'login' %}">Login</a> to write a review.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Review List -->
+            <div>
                 {% for review in page_obj %}
-                <div class="content-card-store mb-3 p-3">
-                    <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-2">
-                        <strong class="text-primary">{{ review.user.username }}</strong>
-                        <span class="badge badge-primary p-2">{{ review.rating }} / 5 ★</span>
+                <div class="review-card">
+                    <div class="review-header">
+                        <span class="review-author">{{ review.user.username }}</span>
+                        <span class="review-badge">{{ review.rating }}/5 ★</span>
                     </div>
-                    <p class="text-secondary mb-2" style="font-size: 0.85rem;">{{ review.created_at|date:"F d, Y" }}</p>
-                    <p class="text-white">{{ review.review_text }}</p>
+                    <p class="review-date">{{ review.created_at|date:"F d, Y" }}</p>
+                    <p style="color: var(--text-primary); margin-bottom: 0.5rem;">{{ review.review_text }}</p>
 
                     {% if review.image %}
-                    <img src="{{ review.image.url }}" alt="Review Image" class="img-fluid mt-2"
-                         style="max-height: 150px; border-radius: 8px;">
+                    <img src="{{ review.image.url }}" alt="Review Image" class="review-image" loading="lazy">
                     {% endif %}
                 </div>
                 {% empty %}
-                <div class="text-center py-4 content-card-store">
-                    <p class="text-secondary mb-0">No reviews yet. Be the first to review this product!</p>
+                <div class="bento-box" style="text-align: center; padding: 2.5rem;">
+                    <p class="text-secondary" style="margin: 0;">No reviews yet. Be the first to review this product!</p>
                 </div>
                 {% endfor %}
+
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Review pages" style="margin-top: 1.5rem;">
+                    <ul class="pagination justify-content-center" style="gap: 5px;">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
             </div>
 
-            {% if page_obj.has_other_pages %}
-            <nav aria-label="Review pages" class="mt-4">
-                <ul class="pagination justify-content-center" style="gap: 5px;">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item"><a class="page-link bg-dark text-primary border-secondary"
-                            href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
-                    {% endif %}
-
-                    {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                    <li class="page-item active"><span class="page-link bg-primary text-white border-primary">{{ num }}</span></li>
-                    {% else %}
-                    <li class="page-item"><a class="page-link bg-dark text-white border-secondary"
-                            href="?page={{ num }}">{{ num }}</a></li>
-                    {% endif %}
-                    {% endfor %}
-
-                    {% if page_obj.has_next %}
-                    <li class="page-item"><a class="page-link bg-dark text-primary border-secondary"
-                            href="?page={{ page_obj.next_page_number }}">Next</a></li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
         </div>
     </div>
+
 </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    // Interactive star rating: sync visual stars → hidden input
+    document.querySelectorAll('.star-rating-input input[type="radio"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            var hiddenInput = document.getElementById('id_rating');
+            if (hiddenInput) {
+                hiddenInput.value = this.value;
+            }
+        });
+    });
+</script>
 {% endblock %}

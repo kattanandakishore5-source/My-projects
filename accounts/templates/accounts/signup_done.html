@@ -1,0 +1,25 @@
+{% extends 'shop/basic.html' %}
+{% block title %} Verify Your Email - My Awesome Cart {% endblock %}
+
+{% block body %}
+<div class="store-container my-5">
+    <div class="content-card-store mx-auto" style="max-width: 500px;">
+        <div class="text-center mb-4">
+            <h2 class="text-primary font-weight-bold">Check Your Email</h2>
+            <div class="my-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                    <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/>
+                </svg>
+            </div>
+            <p class="text-secondary">We've sent a verification link to:</p>
+            <p class="text-white font-weight-bold">{{ email }}</p>
+            <p class="text-secondary mt-3">Please click the link in the email to activate your account. If you don't see the email, check your spam folder.</p>
+        </div>
+        <div class="mt-4 text-center border-top border-secondary pt-3">
+            <p class="text-secondary">Already verified?
+                <a href="{% url 'login' %}" class="text-primary font-weight-bold">Login here</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

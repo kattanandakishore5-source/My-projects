@@ -4,47 +4,65 @@
 {% block body %}
 {% load static %}
 <div class="store-container">
-    {% for product, range, nSlides, useCarousel in allProds %}
-    <div class="section-title">
-        <h3>Flash Sale On {{product.0.category}}</h3>
-    </div>
 
-    <div class="product-grid">
-        {% for i in product %}
-        <div class="product-card" style="position: relative;">
-            <div class="store-image-wrapper">
-                {% if i.stock <= 0 %}
-                    <span class="badge badge-danger" style="position: absolute; top: 10px; left: 10px; z-index: 10;">Out of Stock</span>
-                {% elif i.stock <= i.low_stock_threshold %}
-                    <span class="badge badge-warning" style="position: absolute; top: 10px; left: 10px; z-index: 10;">Low Stock</span>
-                {% elif "Sale" in i.category %}
-                    <span class="badge badge-success" style="position: absolute; top: 10px; left: 10px; z-index: 10;">Sale</span>
-                {% endif %}
-                <img src='/media/{{i.image}}' alt="{{i.product_name}}" loading="lazy">
-                <div class="wishlist-action" style="position: absolute; top: 5px; right: 5px; z-index: 10;">
-                    {% include 'shop/partials/wishlist_icon.html' with i=i %}
-                </div>
-            </div>
-            <div class="store-card-body">
-                <h5 class="product-title" id="namepr{{i.id}}">{{i.product_name}}</h5>
-                <div class="mb-2" style="font-size: 0.9rem;">
-                    <span class="text-warning">{{ i.star_rating }}</span>
-                    <span class="text-secondary ml-1">({{ i.reviews.all|length }})</span>
-                </div>
-                <p class="store-product-desc">{{i.desc|slice:"0:53"}}...</p>
-                <div class="store-price-row">
-                    <span class="text-secondary">Price</span>
-                    <span class="product-price">₹<span id="pricepr{{i.id}}">{{i.price}}</span></span>
-                </div>
-
-                <div class="cart-action">
-                    {% include 'shop/partials/button_actions.html' with i=i %}
-                </div>
-
-            </div>
-        </div>
+    <!-- ═══════════════════════════════════════════════════════════════
+         CATEGORY PILLS — Sticky filter bar
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="category-pills" id="category-filter">
+        <button class="category-pill active" data-category="all">All Products</button>
+        {% for product, range, nSlides, useCarousel in allProds %}
+            <button class="category-pill" data-category="{{ product.0.category }}">{{ product.0.category }}</button>
         {% endfor %}
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         PRODUCT GRID — Bento Layout
+         ═══════════════════════════════════════════════════════════════ -->
+    {% for product, range, nSlides, useCarousel in allProds %}
+    <div class="category-section" data-category="{{ product.0.category }}">
+        <div class="section-header">
+            <h3>Flash Sale On {{product.0.category}}</h3>
+        </div>
+
+        <div class="bento-grid-home">
+            {% for i in product %}
+            <div class="product-card">
+                <div class="store-image-wrapper">
+                    {% if i.stock <= 0 %}
+                        <span class="stock-badge stock-badge--danger">Out of Stock</span>
+                    {% elif i.stock <= i.low_stock_threshold %}
+                        <span class="stock-badge stock-badge--warning">Low Stock</span>
+                    {% elif "Sale" in i.category %}
+                        <span class="stock-badge stock-badge--sale">Sale</span>
+                    {% endif %}
+
+                    <img src='/media/{{i.image}}' alt="{{i.product_name}}" loading="lazy">
+
+                    <div class="wishlist-float">
+                        {% include 'shop/partials/wishlist_icon.html' with i=i %}
+                    </div>
+                </div>
+                <div class="store-card-body">
+                    <h5 class="product-title" id="namepr{{i.id}}">{{i.product_name}}</h5>
+                    <div style="margin-bottom: 0.4rem;">
+                        <span class="star-display">{{ i.star_rating }}</span>
+                        <span class="text-secondary" style="font-size: 0.78rem; margin-left: 4px;">({{ i.reviews.all|length }})</span>
+                    </div>
+                    <p class="store-product-desc">{{i.desc|slice:"0:53"}}...</p>
+                    <div class="store-price-row">
+                        <span class="text-secondary">Price</span>
+                        <span class="product-price">₹<span id="pricepr{{i.id}}">{{i.price}}</span></span>
+                    </div>
+
+                    <div class="cart-action">
+                        {% include 'shop/partials/button_actions.html' with i=i %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
     {% endfor %}
+
 </div>
 {% endblock %}

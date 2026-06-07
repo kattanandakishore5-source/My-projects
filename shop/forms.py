@@ -9,7 +9,7 @@ class ReviewForm(forms.ModelForm):
         model = ProductReview
         fields = ['rating', 'review_text', 'image']
         widgets = {
-            'rating': forms.NumberInput(attrs={'class': 'form-control store-input', 'min': 1, 'max': 5}),
+            'rating': forms.HiddenInput(attrs={'id': 'id_rating'}),
             'review_text': forms.Textarea(attrs={'class': 'form-control store-input', 'rows': 3, 'placeholder': 'Write your review here...'}),
             'image': forms.FileInput(attrs={'class': 'form-control-file text-secondary'}),
         }
