@@ -19,7 +19,7 @@ SECRET_KEY = config('DJANGO_SECRET_KEY', default='dummy_build_key_12345')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='').split(',')
+ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='my-projects-1-ftoj.onrender.com').split(',')
 CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host]
 
 # Application definition
