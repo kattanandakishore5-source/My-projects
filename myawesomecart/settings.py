@@ -6,22 +6,20 @@ import os
 from decouple import config
 import dj_database_url
 
-#Razorpay settings
-RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID')
-RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET')
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Razorpay settings
+RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET')
+
 # SECURITY WARNING: keep the secret key used in production secret!
-# Optimized: Fetching from environment variables with a fallback for local dev
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '9h_#wy*6)%#ug3-uv@7xlryan5a36rqe^j5a$-i0@fo9szu=%n')
+SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Optimized: Fetching from environment variables (True by default for local dev)
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if os.environ.get('DJANGO_ALLOWED_HOSTS') else []
+ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='').split(',')
 CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host]
 
 # Application definition
@@ -37,7 +35,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'cloudinary',
     'rest_framework',
-    # Security packages
     'axes',
     'django_otp',
     'django_otp.plugins.otp_static',
@@ -72,7 +69,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'shop.context_processors.global_cart'
+                'shop.context_processors.global_cart',
             ],
         },
     },
@@ -100,60 +97,61 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
-USE_L10N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
+# Static files
 STATIC_URL = '/static/'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-# Managing media
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+# Media (local fallback for dev)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
-
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
-LOGIN_REDIRECT_URL = 'ShopHome'  # Redirect to home page after successful login
-LOGOUT_REDIRECT_URL = 'ShopHome'  # Redirect to home page after logout
+LOGIN_REDIRECT_URL = 'ShopHome'
+LOGOUT_REDIRECT_URL = 'ShopHome'
 LOGIN_URL = 'two_factor:login'
 
-# --- Authentication Backends (django-axes must be first) ---
 AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-# --- django-axes: Brute-Force Protection ---
-AXES_FAILURE_LIMIT = 5       # Lock account after 5 failed attempts
-AXES_COOLOFF_TIME = 1        # Lock duration in hours
-AXES_RESET_ON_SUCCESS = True  # Reset failed attempts counter on successful login
+# django-axes
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1
+AXES_RESET_ON_SUCCESS = True
 
-# --- Session & Cookie Security ---
+# Session & Cookie Security
+SESSION_COOKIE_HTTPONLY = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 1209600
+
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-SESSION_COOKIE_HTTPONLY = True
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-SESSION_COOKIE_AGE = 1209600  # 2 weeks
-
-# --- Email Backend (console for dev, configure SMTP for production) ---
+# Email (console backend for now — switch to SMTP after custom domain setup)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'noreply@myawesomecart.com'
 
-# --- Password Reset ---
-PASSWORD_RESET_TIMEOUT = 259200  # 3 days in seconds
+# Password Reset
+PASSWORD_RESET_TIMEOUT = 259200
 
-# --- Two-Factor Auth ---
-TWO_FACTOR_LOGIN_TIMEOUT = 600  # 10 minutes for setup wizard
+# Two-Factor Auth
+TWO_FACTOR_LOGIN_TIMEOUT = 600
 
-# --- Logging Configuration ---
+# Logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -183,11 +181,11 @@ LOGGING = {
     },
 }
 
+# Cloudinary
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
     'API_KEY': config('CLOUDINARY_API_KEY', default=''),

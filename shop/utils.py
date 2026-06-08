@@ -1,12 +1,11 @@
 import requests
-import os
+from decouple import config
 
 
 def send_telegram_message(message):
     """Sends a formatted message to your Telegram bot."""
-    # Optimized: Removed hardcoded secrets for security
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "YOUR_FALLBACK_TOKEN")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "YOUR_FALLBACK_CHAT_ID")
+    token = config('TELEGRAM_BOT_TOKEN')
+    chat_id = config('TELEGRAM_CHAT_ID')
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
