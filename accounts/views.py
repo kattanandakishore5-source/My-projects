@@ -1,19 +1,18 @@
 from django.shortcuts import render, redirect
+from django.core.paginator import Paginator
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib import messages
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.views.decorators.http import require_POST
-from django.conf import settings
 from .forms import CustomUserCreationForm
 from .models import CustomUser
 from shop.models import Orders
+from accounts.tasks import send_async_email
 
 
 def signup_view(request):
@@ -39,7 +38,7 @@ def signup_view(request):
                 f"If you did not register, please ignore this email.\n\n"
                 f"— MyAwesomeCart Team"
             )
-            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
+            send_async_email.delay(subject, message, [user.email])
 
             return render(request, 'accounts/signup_done.html', {'email': user.email})
     else:
@@ -74,7 +73,6 @@ def login_view(request):
             login(request, user)
             return redirect('ShopHome')
         else:
-            # Checkpoint 4: Return a static, generic error string
             messages.error(request, 'Invalid credentials.')
     else:
         form = AuthenticationForm()
@@ -91,4 +89,7 @@ def logout_view(request):
 def profile_view(request):
     # Fetch orders belonging to the logged-in user, newest first
     user_orders = Orders.objects.filter(user=request.user).order_by('-order_id')
-    return render(request, 'accounts/profile.html', {'orders': user_orders})
+    paginator = Paginator(user_orders, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'accounts/profile.html', {'page_obj': page_obj})

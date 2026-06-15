@@ -18,3 +18,7 @@ security.log
 
 # Collected static files
 staticfiles/
+
+# Celery
+celerybeat-schedule*
+celerybeat.pid

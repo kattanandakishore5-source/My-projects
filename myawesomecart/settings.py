@@ -3,26 +3,47 @@ Django settings for MyAwesomeCart project.
 """
 
 import os
+import sys
 from decouple import config
 import dj_database_url
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Razorpay settings
+
+def _csv_config(name, default=''):
+    value = config(name, default=default)
+    return [item.strip() for item in value.split(',') if item.strip()]
+
+
+def _csrf_origin_from_host(host):
+    if host in {'*', ''}:
+        return None
+    if host.startswith('.'):
+        return f'https://*{host}'
+    if host in {'localhost', '127.0.0.1'}:
+        return f'http://{host}'
+    return f'https://{host}'
+
+# Razorpay
 RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID', default='dummy_key')
 RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='dummy_secret')
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('DJANGO_SECRET_KEY', default='dummy_build_key_12345')
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['my-projects-zfir.onrender.com', 'localhost', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host]
+ALLOWED_HOSTS = _csv_config(
+    'DJANGO_ALLOWED_HOSTS',
+    default='.ondigitalocean.app,my-projects-zfir.onrender.com,localhost,127.0.0.1',
+)
+CSRF_TRUSTED_ORIGINS = _csv_config('DJANGO_CSRF_TRUSTED_ORIGINS')
+if not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = [
+        origin for origin in (_csrf_origin_from_host(host) for host in ALLOWED_HOSTS) if origin
+    ]
 
-# Application definition
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 INSTALLED_APPS = [
     'shop.apps.ShopConfig',
     'accounts.apps.AccountsConfig',
@@ -32,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
     'cloudinary_storage',
     'cloudinary',
     'rest_framework',
@@ -41,6 +63,7 @@ INSTALLED_APPS = [
     'django_otp.plugins.otp_totp',
     'two_factor',
     'two_factor.plugins.phonenumber',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -77,7 +100,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'myawesomecart.wsgi.application'
 
-# Database
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3'),
@@ -85,7 +107,6 @@ DATABASES = {
     )
 }
 
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -93,16 +114,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static files
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 WHITENOISE_MANIFEST_STRICT = False
 
 STORAGES = {
@@ -114,7 +132,6 @@ STORAGES = {
     },
 }
 
-# Media (local fallback for dev)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
@@ -125,7 +142,7 @@ LOGOUT_REDIRECT_URL = 'ShopHome'
 LOGIN_URL = 'two_factor:login'
 
 AUTHENTICATION_BACKENDS = [
-    'axes.backends.AxesBackend',
+    'axes.backends.AxesStandaloneBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
@@ -138,21 +155,24 @@ AXES_RESET_ON_SUCCESS = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 1209600
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = config('DJANGO_SECURE_SSL_REDIRECT', default=True, cast=bool)
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
-# Email (console backend for now — switch to SMTP after custom domain setup)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# Password Reset
 PASSWORD_RESET_TIMEOUT = 259200
 
-# Two-Factor Auth
 TWO_FACTOR_LOGIN_TIMEOUT = 600
 
-# Logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -182,13 +202,69 @@ LOGGING = {
     },
 }
 
-# Cloudinary
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
-
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
     'API_KEY': config('CLOUDINARY_API_KEY', default=''),
     'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
 }
+
+# ─── Celery Configuration ─────────────────────────────────────
+_REDIS_URL = config('REDIS_URL', default='')
+CELERY_BROKER_URL = config(
+    'CELERY_BROKER_URL',
+    default=f'{_REDIS_URL}/0' if _REDIS_URL else 'memory://',
+)
+CELERY_RESULT_BACKEND = config(
+    'CELERY_RESULT_BACKEND',
+    default=f'{_REDIS_URL}/1' if _REDIS_URL else 'cache+memory://',
+)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# ─── Redis Cache Configuration ────────────────────────────────
+if _REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': config('REDIS_CACHE_URL', default=f'{_REDIS_URL}/2'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
+
+# ─── Testing Overrides ────────────────────────────────────────
+if 'test' in sys.argv:
+    TESTING = True
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+    # Use in-memory cache for tests to avoid Redis dependency
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
+    # Disable SSL redirection and secure cookies for testing environment
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    AXES_ENABLED = False
+    AUTHENTICATION_BACKENDS = [
+        'axes.backends.AxesStandaloneBackend',
+        'django.contrib.auth.backends.ModelBackend',
+    ]

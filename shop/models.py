@@ -4,27 +4,27 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Product(models.Model):
-    # Fixed: Removed the uninstantiated 'product_id = models.AutoField'
-    # Django automatically adds an 'id' AutoField which your views are already using.
     product_name = models.CharField(max_length=50)
-    category = models.CharField(max_length=50, default="")
+    category = models.CharField(max_length=50, default="", db_index=True)
     subcategory = models.CharField(max_length=50, default="")
     price = models.IntegerField(default=0)
     desc = models.CharField(max_length=300)
-    pub_date = models.DateField()
+    pub_date = models.DateField(auto_now_add=True)
     image = models.ImageField(upload_to='shop/images', default="")
-    stock = models.IntegerField(default=100)
+    stock = models.IntegerField(default=100, db_index=True)
     low_stock_threshold = models.IntegerField(default=3)
+    is_active = models.BooleanField(default=True)
+    average_rating = models.FloatField(default=0.0)
+    review_count = models.IntegerField(default=0)
 
     def __str__(self):
         return self.product_name
 
     @property
     def star_rating(self):
-        reviews = self.reviews.all()
-        if not reviews:
+        if self.review_count == 0:
             return "☆☆☆☆☆"
-        avg = round(sum(r.rating for r in reviews) / len(reviews))
+        avg = round(self.average_rating)
         return "★" * avg + "☆" * (5 - avg)
 
 
@@ -41,7 +41,7 @@ class Contact(models.Model):
 
 class Orders(models.Model):
     order_id = models.AutoField(primary_key=True)
-    items_json = models.CharField(max_length=5000)
+    items_json = models.JSONField(default=dict)
     amount = models.IntegerField(default=0)
     name = models.CharField(max_length=90)
     email = models.CharField(max_length=111)
@@ -55,8 +55,7 @@ class Orders(models.Model):
         on_delete=models.SET_NULL,
         null=True, blank=True
     )
-    # New fields
-    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     payment_status = models.CharField(
         max_length=20,
         choices=[('PENDING', 'Pending'), ('PAID', 'Paid'), ('FAILED', 'Failed')],
@@ -90,18 +89,15 @@ class CartItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
 
+    class Meta:
+        unique_together = ('cart', 'product')
+
     def __str__(self):
         return f"{self.quantity} x {self.product.product_name}"
 
 
-DISCOUNT_CHOICES = (
-    ('Percentage', 'Percentage (%)'),
-    ('Flat', 'Flat Amount (Rs.)'),
-)
-
-
 class Coupon(models.Model):
-    code = models.CharField(max_length=50, unique=True)
+    code = models.CharField(max_length=50, unique=True, db_index=True)
     valid_from = models.DateField()
     valid_to = models.DateField()
     TYPE_CHOICES = (('Percentage', 'Percentage'), ('Flat', 'Flat'))

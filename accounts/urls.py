@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from .forms import AsyncPasswordResetForm
 
 urlpatterns = [
     path('signup/', views.signup_view, name='signup'),
@@ -12,11 +13,13 @@ urlpatterns = [
     path('activate/<uidb64>/<token>/', views.activate_account, name='activate'),
 
     # Password Reset Flow (Checkpoint 5) — uses Django's built-in auth views
+    # with AsyncPasswordResetForm for Celery-based async email dispatch
     path('password-reset/',
          auth_views.PasswordResetView.as_view(
              template_name='registration/password_reset_form.html',
              email_template_name='registration/password_reset_email.html',
              subject_template_name='registration/password_reset_subject.txt',
+             form_class=AsyncPasswordResetForm,
          ),
          name='password_reset'),
     path('password-reset/done/',

@@ -15,4 +15,4 @@ RUN bash build.sh
 
 EXPOSE 8080
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "myawesomecart.wsgi:application"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:${PORT:-8080} myawesomecart.wsgi:application"]

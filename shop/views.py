@@ -1,19 +1,25 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Product, Contact, Orders, OrderUpdate, Cart, CartItem, Coupon, Wishlist, ProductReview
-from django.core.paginator import Paginator
-from django.db import transaction
-from django.db.models import Q
-from math import ceil
 import json
 import logging
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.core.paginator import Paginator
+from django.db import transaction
+from django.db.models import F
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
-from .forms import CouponApplyForm, ReviewForm
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
+from django.core.cache import cache
 import razorpay
+
+from .models import Product, Contact, Orders, OrderUpdate, Cart, CartItem, Coupon, Wishlist
+from .forms import ReviewForm
+from .utils import calculate_cart_total, build_product_carousel
+from shop.tasks import send_order_confirmation_email
 
 logger = logging.getLogger(__name__)
 
@@ -25,32 +31,62 @@ def _get_or_create_cart(request):
     return cart
 
 
+def _get_cart_items_dict(cart):
+    """Build a product_id -> quantity mapping for the given cart."""
+    return {item.product_id: item.quantity for item in cart.items.all()}
+
+
+def _get_user_wishlist_ids(user):
+    """Return the set of product IDs in the user's wishlist."""
+    if user.is_authenticated:
+        return set(Wishlist.objects.filter(user=user).values_list('product_id', flat=True))
+    return set()
+
+
+def _search_products(query):
+    """
+    Search products using PostgreSQL Full-Text Search when available,
+    with an automatic fallback to __icontains for SQLite.
+    """
+    from django.db import connection
+
+    base_qs = Product.objects.filter(stock__gt=0, is_active=True)
+
+    if connection.vendor == 'postgresql':
+        from django.contrib.postgres.search import SearchVector, SearchQuery
+        search_vector = SearchVector('product_name', 'desc', 'category', 'subcategory')
+        search_query = SearchQuery(query)
+        return base_qs.annotate(search=search_vector).filter(
+            search=search_query
+        ).prefetch_related('reviews').order_by('category')
+    else:
+        # SQLite fallback
+        from django.db.models import Q
+        return base_qs.filter(
+            Q(product_name__icontains=query) |
+            Q(desc__icontains=query) |
+            Q(category__icontains=query) |
+            Q(subcategory__icontains=query),
+        ).prefetch_related('reviews').order_by('category')
+
+
+# ─── Public Views ─────────────────────────────────────────────
+
+
+@vary_on_cookie
+@cache_page(60 * 5)
 def index(request):
     cart = _get_or_create_cart(request)
-    cart_items_dict = {item.product_id: item.quantity for item in cart.items.all()}
+    cart_items_dict = _get_cart_items_dict(cart)
+    user_wishlist_ids = _get_user_wishlist_ids(request.user)
 
-    from itertools import groupby
-    from operator import attrgetter
+    all_products = Product.objects.filter(
+        stock__gt=0, is_active=True,
+    ).prefetch_related('reviews').order_by('category')
 
-    allProds = []
-    all_products = Product.objects.filter(stock__gt=0).prefetch_related('reviews').order_by('category')
+    allProds = build_product_carousel(all_products, cart_items_dict, user_wishlist_ids)
 
-    user_wishlist_ids = set()
-    if request.user.is_authenticated:
-        user_wishlist_ids = set(Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True))
-
-    for cat, prod_group in groupby(all_products, key=attrgetter('category')):
-        prod = list(prod_group)
-        for p in prod:
-            p.cart_qty = cart_items_dict.get(p.id, 0)
-            p.in_wishlist = p.id in user_wishlist_ids
-        n = len(prod)
-        nSlides = n // 4 + ceil((n / 4) - (n // 4))
-        if n != 0:
-            allProds.append([prod, range(1, nSlides), nSlides, n > 4])
-
-    params = {'allProds': allProds}
-    return render(request, 'shop/index.html', params)
+    return render(request, 'shop/index.html', {'allProds': allProds})
 
 
 def search(request):
@@ -58,40 +94,17 @@ def search(request):
     allProds = []
 
     cart = _get_or_create_cart(request)
-    cart_items_dict = {item.product_id: item.quantity for item in cart.items.all()}
+    cart_items_dict = _get_cart_items_dict(cart)
+    user_wishlist_ids = _get_user_wishlist_ids(request.user)
 
-    from itertools import groupby
-    from operator import attrgetter
-
-    user_wishlist_ids = set()
-    if request.user.is_authenticated:
-        user_wishlist_ids = set(Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True))
-
-    # Optimized: Removed Python-side loop filtering. Used DB-level ORM lookups.
     if len(query) >= 4:
-        all_products = Product.objects.filter(
-            Q(product_name__icontains=query) |
-            Q(desc__icontains=query) |
-            Q(category__icontains=query) |
-            Q(subcategory__icontains=query),
-            stock__gt=0
-        ).prefetch_related('reviews').order_by('category')
-
-        for cat, prod_group in groupby(all_products, key=attrgetter('category')):
-            prod = list(prod_group)
-            for p in prod:
-                p.cart_qty = cart_items_dict.get(p.id, 0)
-                p.in_wishlist = p.id in user_wishlist_ids
-
-            n = len(prod)
-            nSlides = n // 4 + ceil((n / 4) - (n // 4))
-            if n != 0:
-                allProds.append([prod, range(1, nSlides), nSlides, n > 4])
+        all_products = _search_products(query)
+        allProds = build_product_carousel(all_products, cart_items_dict, user_wishlist_ids)
 
     params = {'allProds': allProds, "msg": ""}
     if len(allProds) == 0 or len(query) < 4:
         params = {'msg': "Please make sure to enter a relevant search query of at least 4 characters"}
-        
+
     response = render(request, 'shop/search.html', params)
     if params['msg'] and request.headers.get('HX-Request'):
         response['HX-Trigger'] = json.dumps({"showError": params['msg']})
@@ -117,29 +130,40 @@ def contact(request):
 
 def tracker(request):
     if request.method == "POST":
-        orderId = request.POST.get('orderId', '')
+        raw_order_id = request.POST.get('orderId', '')
         email = request.POST.get('email', '')
         try:
-            order = Orders.objects.filter(order_id=orderId, email=email)
+            order_id = int(raw_order_id)
+        except (ValueError, TypeError):
+            return JsonResponse({"status": "error", "message": "Invalid Order ID"})
+        try:
+            order = Orders.objects.filter(order_id=order_id, email=email)
             if len(order) > 0:
-                update = OrderUpdate.objects.filter(order_id=orderId)
+                update = OrderUpdate.objects.filter(order_id=order_id)
                 updates = [{'text': item.update_desc, 'time': item.timestamp} for item in update]
-                response = json.dumps({"status": "success", "updates": updates, "itemsJson": order[0].items_json},
-                                      default=str)
+                response = json.dumps(
+                    {"status": "success", "updates": updates, "itemsJson": order[0].items_json},
+                    default=str,
+                )
                 return HttpResponse(response)
             else:
-                return HttpResponse('{"status":"noitem"}')
+                return JsonResponse({"status": "noitem"})
         except Exception as e:
-            return HttpResponse('{"status":"error"}')
+            logger.exception("Error in tracker: %s", str(e))
+            return JsonResponse({"status": "error"})
     return render(request, 'shop/tracker.html')
 
 
 def productView(request, myid):
-    product = get_object_or_404(Product, id=myid)
+    cache_key = f'product_{myid}'
+    product = cache.get(cache_key)
+    if product is None:
+        product = get_object_or_404(Product, id=myid)
+        cache.set(cache_key, product, 60 * 10)
     review_list = product.reviews.all().order_by('-created_at')
 
     cart = _get_or_create_cart(request)
-    cart_items_dict = {item.product_id: item.quantity for item in cart.items.all()}
+    cart_items_dict = _get_cart_items_dict(cart)
 
     product.cart_qty = cart_items_dict.get(product.id, 0)
 
@@ -159,7 +183,9 @@ def productView(request, myid):
     for rv in recently_viewed:
         rv.cart_qty = cart_items_dict.get(rv.id, 0)
 
-    recommendations = Product.objects.filter(category=product.category, stock__gt=0).prefetch_related('reviews').exclude(id=myid)[:4]
+    recommendations = Product.objects.filter(
+        category=product.category, stock__gt=0, is_active=True,
+    ).prefetch_related('reviews').exclude(id=myid)[:4]
     for rec in recommendations:
         rec.cart_qty = cart_items_dict.get(rec.id, 0)
 
@@ -168,7 +194,8 @@ def productView(request, myid):
     page_obj = paginator.get_page(page_number)
 
     if request.method == "POST":
-        if not request.user.is_authenticated: return redirect('login')
+        if not request.user.is_authenticated:
+            return redirect('login')
         form = ReviewForm(request.POST, request.FILES)
         if form.is_valid():
             review = form.save(commit=False)
@@ -188,6 +215,9 @@ def productView(request, myid):
     })
 
 
+# ─── Payment ──────────────────────────────────────────────────
+
+
 @csrf_exempt
 def payment_success(request):
     if request.method == "POST":
@@ -204,15 +234,15 @@ def payment_success(request):
                 'razorpay_payment_id': razorpay_payment_id,
                 'razorpay_signature': razorpay_signature
             })
-            
-            # Payment signature is verified
+
             order = Orders.objects.filter(razorpay_order_id=razorpay_order_id).first()
             if order:
                 order.payment_status = 'PAID'
                 order.save()
                 OrderUpdate(order_id=order.order_id, update_desc="The payment was successful and order is confirmed").save()
+                send_order_confirmation_email.delay(order.order_id)
             return render(request, 'shop/payment_status.html', {'status': 'success', 'order_id': order.order_id if order else ''})
-            
+
         except razorpay.errors.SignatureVerificationError:
             order = Orders.objects.filter(razorpay_order_id=razorpay_order_id).first()
             if order:
@@ -221,55 +251,57 @@ def payment_success(request):
                 OrderUpdate(order_id=order.order_id, update_desc="Payment signature verification failed").save()
             return render(request, 'shop/payment_status.html', {'status': 'failed', 'order_id': order.order_id if order else ''})
         except Exception as e:
-            logger.error(f"Payment processing error: {str(e)}")
+            logger.exception("Error in payment_success: %s", str(e))
             return HttpResponse("An error occurred while processing your payment. Please try again.")
-    
+
     return HttpResponse("Invalid Request")
+
+
+# ─── Cart ─────────────────────────────────────────────────────
 
 
 @require_POST
 def add_to_cart(request, product_id):
-    if request.method == 'POST':
-        cart = _get_or_create_cart(request)
-        product = get_object_or_404(Product, id=product_id)
+    cart = _get_or_create_cart(request)
+    product = get_object_or_404(Product, id=product_id)
 
-        if product.stock > 0:
-            cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-            if not created:
-                if cart_item.quantity < product.stock:
-                    cart_item.quantity += 1
-                    cart_item.save()
+    if product.stock > 0:
+        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+        if not created:
+            if cart_item.quantity < product.stock:
+                CartItem.objects.filter(pk=cart_item.pk).update(quantity=F('quantity') + 1)
+                cart_item.refresh_from_db()
 
-        # JSON response for Vanilla JS fetch()
-        if 'application/json' in request.headers.get('Accept', ''):
-            try:
-                cart_item = CartItem.objects.get(cart=cart, product=product)
-                qty = cart_item.quantity
-            except CartItem.DoesNotExist:
-                qty = 0
-            return JsonResponse({
-                'status': 'ok',
-                'cart_qty': qty,
-                'cart_count': cart.items.count(),
-                'message': f'Added {product.product_name} to cart'
-            })
+    # JSON response for Vanilla JS fetch()
+    if 'application/json' in request.headers.get('Accept', ''):
+        try:
+            cart_item = CartItem.objects.get(cart=cart, product=product)
+            qty = cart_item.quantity
+        except CartItem.DoesNotExist:
+            qty = 0
+        return JsonResponse({
+            'status': 'ok',
+            'cart_qty': qty,
+            'cart_count': cart.items.count(),
+            'message': f'Added {product.product_name} to cart'
+        })
 
-        # Legacy HTMX fallback
-        if request.headers.get('HX-Request'):
-            current_url = request.headers.get('Hx-Current-Url', '')
-            if '/wishlist/' in current_url:
-                return wishlist_view(request)
+    # Legacy HTMX fallback
+    if request.headers.get('HX-Request'):
+        current_url = request.headers.get('Hx-Current-Url', '')
+        if '/wishlist/' in current_url:
+            return wishlist_view(request)
 
-            try:
-                cart_item = CartItem.objects.get(cart=cart, product=product)
-                product.cart_qty = cart_item.quantity
-            except CartItem.DoesNotExist:
-                product.cart_qty = 0
-            cart_items = cart.items.count()
-            response = render(request, 'shop/partials/button_actions.html',
-                          {'i': product, 'cart_items': cart_items, 'is_htmx': True, 'user': request.user})
-            response['HX-Trigger'] = json.dumps({"showMessage": f"Added {product.product_name} to cart"})
-            return response
+        try:
+            cart_item = CartItem.objects.get(cart=cart, product=product)
+            product.cart_qty = cart_item.quantity
+        except CartItem.DoesNotExist:
+            product.cart_qty = 0
+        cart_items = cart.items.count()
+        response = render(request, 'shop/partials/button_actions.html',
+                      {'i': product, 'cart_items': cart_items, 'is_htmx': True, 'user': request.user})
+        response['HX-Trigger'] = json.dumps({"showMessage": f"Added {product.product_name} to cart"})
+        return response
 
     referer = request.META.get('HTTP_REFERER', '/')
     base_url = referer.split('#')[0]
@@ -279,27 +311,14 @@ def add_to_cart(request, product_id):
 def cart_detail(request):
     cart = _get_or_create_cart(request)
 
-    for item in cart.items.select_related('product').all():
-        if item.product.stock < item.quantity:
-            item.delete()
+    # Atomic single-query cleanup for items exceeding available stock
+    cart.items.filter(quantity__gt=F('product__stock')).delete()
 
-    subtotal = sum(item.product.price * item.quantity for item in cart.items.select_related('product').all())
-    coupon_id = request.session.get('coupon_id')
-    discount_amount = 0
-    coupon = None
-    if coupon_id:
-        try:
-            coupon = Coupon.objects.get(id=coupon_id, active=True)
-            if coupon.discount_type == 'Percentage':
-                discount_amount = int((coupon.discount_value / 100) * subtotal)
-            elif coupon.discount_type == 'Flat':
-                discount_amount = coupon.discount_value
-            if discount_amount > subtotal:
-                discount_amount = subtotal
-        except Coupon.DoesNotExist:
-            request.session['coupon_id'] = None
+    subtotal, discount_amount, total, coupon = calculate_cart_total(cart, request.session.get('coupon_id'))
 
-    total = subtotal - discount_amount
+    if coupon is None and request.session.get('coupon_id'):
+        request.session['coupon_id'] = None
+
     context = {'cart': cart, 'subtotal': subtotal, 'discount': discount_amount, 'total': total, 'coupon': coupon}
     return render(request, 'shop/cart.html', context)
 
@@ -312,15 +331,14 @@ def update_cart_item(request, product_id, action):
 
     if action == 'increment':
         if cart_item.quantity < product.stock:
-            cart_item.quantity += 1
-            cart_item.save()
+            CartItem.objects.filter(pk=cart_item.pk).update(quantity=F('quantity') + 1)
+            cart_item.refresh_from_db()
     elif action == 'decrement':
-        cart_item.quantity -= 1
+        CartItem.objects.filter(pk=cart_item.pk).update(quantity=F('quantity') - 1)
+        cart_item.refresh_from_db()
         if cart_item.quantity <= 0:
             cart_item.delete()
             cart_item.quantity = 0
-        else:
-            cart_item.save()
 
     # JSON response for Vanilla JS fetch()
     if 'application/json' in request.headers.get('Accept', ''):
@@ -328,7 +346,7 @@ def update_cart_item(request, product_id, action):
             'status': 'ok',
             'cart_qty': cart_item.quantity,
             'cart_count': cart.items.count(),
-            'message': f'Cart updated'
+            'message': 'Cart updated'
         })
 
     # Legacy HTMX fallback
@@ -352,34 +370,33 @@ def remove_from_cart(request, product_id):
     cart = _get_or_create_cart(request)
     cart_item = get_object_or_404(CartItem, product_id=product_id, cart=cart)
     cart_item.delete()
-    # Fixed potential issue if HTTP_REFERER is missing
     return redirect(request.META.get('HTTP_REFERER', 'CartDetail'))
 
 
 @require_POST
 def coupon_apply(request):
     now = timezone.now().date()
-    if request.method == "POST":
-        code = request.POST.get('code', '').strip()
-        if not code:
-            if 'coupon_id' in request.session:
-                del request.session['coupon_id']
-            return redirect('CartDetail')
-        try:
-            coupon = Coupon.objects.get(code__iexact=code, valid_from__lte=now, valid_to__gte=now, active=True)
-            request.session['coupon_id'] = coupon.id
-        except Coupon.DoesNotExist:
-            if 'coupon_id' in request.session:
-                del request.session['coupon_id']
+    code = request.POST.get('code', '').strip()
+    if not code:
+        if 'coupon_id' in request.session:
+            del request.session['coupon_id']
+        return redirect('CartDetail')
+    try:
+        coupon = Coupon.objects.get(code__iexact=code, valid_from__lte=now, valid_to__gte=now, active=True)
+        request.session['coupon_id'] = coupon.id
+    except Coupon.DoesNotExist:
+        if 'coupon_id' in request.session:
+            del request.session['coupon_id']
     return redirect('CartDetail')
+
+
+# ─── Checkout ─────────────────────────────────────────────────
 
 
 @login_required
 def checkout(request):
     if request.method == "POST":
-        items_json = request.POST.get('itemsJson', '')
         name = request.POST.get('name', '')
-        amount = request.POST.get('amount', '')
         email = request.POST.get('email', '')
         address = request.POST.get('address1', '') + " " + request.POST.get('address2', '')
         city = request.POST.get('city', '')
@@ -390,24 +407,45 @@ def checkout(request):
         current_user = request.user if request.user.is_authenticated else None
         cart = _get_or_create_cart(request)
 
+        # Query once and list-ify to avoid N+1 and query redundancy in loops
+        cart_items = list(cart.items.select_related('product').all())
+
+        # Backend-calculated total (never trust client-side amount)
+        subtotal, discount_amount, amount, _coupon = calculate_cart_total(
+            cart, request.session.get('coupon_id')
+        )
+
+        # Build items_json as a proper dict for JSONField
+        items_data = {
+            str(item.product.id): {
+                'name': item.product.product_name,
+                'qty': item.quantity,
+                'price': item.product.price,
+            }
+            for item in cart_items
+        }
+
         try:
             with transaction.atomic():
-                product_ids = [item.product.id for item in cart.items.select_related('product').all()]
+                product_ids = [item.product.id for item in cart_items]
                 locked_products = Product.objects.select_for_update().filter(id__in=product_ids)
                 stock_dict = {p.id: p for p in locked_products}
 
-                for item in cart.items.select_related('product').all():
+                for item in cart_items:
                     p = stock_dict.get(item.product.id)
                     if not p or p.stock < item.quantity:
                         return HttpResponse(f"Sorry, '{item.product.product_name}' just went out of stock!")
 
-                for item in cart.items.select_related('product').all():
+                for item in cart_items:
                     p = stock_dict[item.product.id]
                     p.stock -= item.quantity
                     p.save()
 
-                order = Orders(items_json=items_json, name=name, email=email, address=address, city=city, state=state,
-                               zip_code=zip_code, phone=phone, amount=amount, user=current_user)
+                order = Orders(
+                    items_json=items_data, name=name, email=email, address=address,
+                    city=city, state=state, zip_code=zip_code, phone=phone,
+                    amount=amount, user=current_user,
+                )
                 order.save()
                 OrderUpdate(order_id=order.order_id, update_desc="The order has been placed").save()
 
@@ -415,10 +453,11 @@ def checkout(request):
                 cart.items.all().delete()
 
         except Exception as e:
+            logger.exception("Error in checkout: %s", str(e))
             return HttpResponse("An error occurred during checkout. Please try again.")
 
         try:
-            amount_in_paise = int(float(amount) * 100)
+            amount_in_paise = int(amount * 100)
             client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
             razorpay_order = client.order.create({
                 'amount': amount_in_paise,
@@ -427,12 +466,11 @@ def checkout(request):
             })
             order.razorpay_order_id = razorpay_order['id']
             order.save()
-            
-            # The URL host and port should ideally come from request, but we will use the host from the request
+
             host = request.get_host()
-            scheme = request.is_secure() and "https" or "http"
+            scheme = "https" if request.is_secure() else "http"
             callback_url = f"{scheme}://{host}/shop/payment-success/"
-            
+
             context = {
                 'order_id': order.order_id,
                 'razorpay_order_id': razorpay_order['id'],
@@ -446,36 +484,30 @@ def checkout(request):
             }
             return render(request, 'shop/razorpay_checkout.html', context)
         except Exception as e:
-            logger.error(f"Razorpay order creation error: {str(e)}")
+            logger.exception("Error in checkout (Razorpay): %s", str(e))
             return HttpResponse("An error occurred while initiating payment. Please try again.")
 
+    # GET — show checkout page
     cart = _get_or_create_cart(request)
-    subtotal = sum(item.product.price * item.quantity for item in cart.items.select_related('product').all())
-    coupon_id = request.session.get('coupon_id')
-    discount_amount = 0
-    coupon = None
+    subtotal, discount_amount, total, coupon = calculate_cart_total(cart, request.session.get('coupon_id'))
 
-    if coupon_id:
-        try:
-            coupon = Coupon.objects.get(id=coupon_id, active=True)
-            if coupon.discount_type == 'Percentage':
-                discount_amount = int((coupon.discount_value / 100) * subtotal)
-            elif coupon.discount_type == 'Flat':
-                discount_amount = coupon.discount_value
-            if discount_amount > subtotal:
-                discount_amount = subtotal
-        except Coupon.DoesNotExist:
-            request.session['coupon_id'] = None
+    if coupon is None and request.session.get('coupon_id'):
+        request.session['coupon_id'] = None
 
-    total = subtotal - discount_amount
     context = {'cart': cart, 'subtotal': subtotal, 'discount': discount_amount, 'total': total, 'coupon': coupon}
     return render(request, 'shop/checkout.html', context)
+
+
+# ─── Orders & Wishlist ────────────────────────────────────────
 
 
 @login_required
 def my_orders(request):
     orders = Orders.objects.filter(user=request.user).order_by('-order_id')
-    return render(request, 'shop/my_orders.html', {'orders': orders})
+    paginator = Paginator(orders, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'shop/my_orders.html', {'page_obj': page_obj})
 
 
 @login_required
