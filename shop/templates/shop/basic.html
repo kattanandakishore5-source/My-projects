@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <link rel="stylesheet" href="/static/shop/css/style.css">
@@ -58,47 +58,57 @@
 <body>
 
 <nav class="navbar">
-    <div class="nav-left">
+    <div class="nav-brand">
         <a href="{% url 'ShopHome' %}" class="logo">AwesomeCart</a>
-        <a href="{% url 'AboutUs' %}">About</a>
-        <a href="{% url 'ContactUs' %}">Contact Us</a>
-        <a href="{% url 'TrackingStatus' %}">Tracker</a>
+        <button class="navbar-toggler" id="navbarToggler" aria-label="Toggle navigation">
+            <span class="toggler-icon"></span>
+            <span class="toggler-icon"></span>
+            <span class="toggler-icon"></span>
+        </button>
     </div>
 
-    <div class="nav-center">
-        <form method="get" action="{% url 'Search' %}" class="search-form">
-            <input type="text" name="search" placeholder="Search products..." class="search-input" required>
-            <button type="submit" class="btn btn-primary search-btn">Search</button>
-        </form>
-    </div>
+    <div class="nav-collapse-menu" id="navCollapseMenu">
+        <div class="nav-left-links">
+            <a href="{% url 'AboutUs' %}">About</a>
+            <a href="{% url 'ContactUs' %}">Contact Us</a>
+            <a href="{% url 'TrackingStatus' %}">Tracker</a>
+        </div>
 
-    <div class="nav-right">
-        <a href="{% url 'CartDetail' %}" class="cart-link">
-            Cart <span id="cart_count" class="cart-badge ml-1">{{ global_cart_count|default:"0" }}</span>
-        </a>
+        <div class="nav-center">
+            <form method="get" action="{% url 'Search' %}" class="search-form">
+                <input type="text" name="search" placeholder="Search products..." class="search-input" required>
+                <button type="submit" class="btn btn-primary search-btn">Search</button>
+            </form>
+        </div>
 
-        {% if user.is_authenticated %}
-            <div class="dropdown">
-                <span class="user-name dropdown-toggle" id="profileMenu" data-toggle="dropdown" aria-haspopup="true"
-                      aria-expanded="false">
-                    {{ user.username }}
-                </span>
-                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="profileMenu">
-                    <a class="dropdown-item" href="{% url 'profile' %}">My Profile</a>
-                    <a class="dropdown-item" href="{% url 'MyOrders' %}">My Orders</a>
-                    <a class="dropdown-item" href="{% url 'Wishlist' %}">Wishlist</a>
-                    <div class="dropdown-divider" style="border-color: var(--border-color);"></div>
-                    <form action="{% url 'logout' %}" method="post" class="m-0">
-                        {% csrf_token %}
-                        <button type="submit" class="dropdown-item text-danger"
-                                style="background: transparent; border: none; width: 100%; text-align: left;">Logout
-                        </button>
-                    </form>
+        <div class="nav-right">
+            <a href="{% url 'CartDetail' %}" class="cart-link">
+                Cart <span id="cart_count" class="cart-badge ml-1">{{ global_cart_count|default:"0" }}</span>
+            </a>
+
+            {% if user.is_authenticated %}
+                <div class="dropdown">
+                    <span class="user-name dropdown-toggle" id="profileMenu" data-toggle="dropdown" aria-haspopup="true"
+                          aria-expanded="false">
+                        {{ user.username }}
+                    </span>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="profileMenu">
+                        <a class="dropdown-item" href="{% url 'profile' %}">My Profile</a>
+                        <a class="dropdown-item" href="{% url 'MyOrders' %}">My Orders</a>
+                        <a class="dropdown-item" href="{% url 'Wishlist' %}">Wishlist</a>
+                        <div class="dropdown-divider" style="border-color: var(--border-color);"></div>
+                        <form action="{% url 'logout' %}" method="post" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item text-danger"
+                                    style="background: transparent; border: none; width: 100%; text-align: left;">Logout
+                            </button>
+                        </form>
+                    </div>
                 </div>
-            </div>
-        {% else %}
-            <a href="{% url 'login' %}">Login</a>
-        {% endif %}
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+            {% endif %}
+        </div>
     </div>
 </nav>
 
@@ -120,6 +130,12 @@
         } else {
             document.querySelector('.navbar').classList.remove('scrolled');
         }
+    });
+</script>
+<script>
+    document.getElementById('navbarToggler').addEventListener('click', function() {
+        document.getElementById('navCollapseMenu').classList.toggle('active');
+        this.classList.toggle('active');
     });
 </script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>

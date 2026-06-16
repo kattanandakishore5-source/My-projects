@@ -24,7 +24,7 @@
                 {% include 'shop/partials/wishlist_icon.html' with i=product %}
             </div>
 
-            <img src="/media/{{product.image}}" alt="{{product.product_name}}" loading="eager"
+            <img src="/media/{{product.image}}" alt="{{product.product_name}}" class="img-fluid" loading="eager"
                  style="max-height: 400px; width: 100%; object-fit: contain; border-radius: 12px;">
         </div>
 
@@ -167,7 +167,7 @@
             <h3>Customer Reviews</h3>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 24px; align-items: start;">
+        <div class="reviews-layout-grid">
 
             <!-- Write a Review -->
             <div>

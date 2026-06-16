@@ -16,18 +16,18 @@
     <div class="section-title">
         <h3 class="text-primary">Search Results For {{product.0.category}}</h3>
     </div>
-    <div class="product-grid" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; padding-bottom: 20px;">
+    <div class="product-grid">
         {% for i in product %}
-        <div class="product-card" style="scroll-snap-align: start; min-width: 250px; flex: 0 0 auto; position: relative;">
+        <div class="product-card">
             <div class="store-image-wrapper">
                 {% if i.stock <= 0 %}
-                    <span class="badge badge-danger" style="position: absolute; top: 10px; left: 10px; z-index: 10;">Out of Stock</span>
+                    <span class="stock-badge stock-badge--danger">Out of Stock</span>
                 {% elif i.stock <= i.low_stock_threshold %}
-                    <span class="badge badge-warning" style="position: absolute; top: 10px; left: 10px; z-index: 10;">Low Stock</span>
+                    <span class="stock-badge stock-badge--warning">Low Stock</span>
                 {% elif "Sale" in i.category %}
-                    <span class="badge badge-success" style="position: absolute; top: 10px; left: 10px; z-index: 10;">Sale</span>
+                    <span class="stock-badge stock-badge--sale">Sale</span>
                 {% endif %}
-                <img src='/media/{{i.image}}' alt="{{i.product_name}}" loading="lazy">
+                <img src='/media/{{i.image}}' alt="{{i.product_name}}" class="img-fluid" loading="lazy">
                 <div class="wishlist-action" style="position: absolute; top: 5px; right: 5px; z-index: 10;">
                     {% include 'shop/partials/wishlist_icon.html' with i=i %}
                 </div>

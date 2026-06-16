@@ -24,9 +24,9 @@ app.conf.beat_schedule = {
         'task': 'shop.tasks.check_low_stock',
         'schedule': crontab(minute='*/30'),
     },
-    'clear-expired-sessions-weekly': {
+    'clear-expired-sessions-daily': {
         'task': 'accounts.tasks.clear_expired_sessions',
-        'schedule': crontab(hour=3, minute=0, day_of_week='sunday'),
+        'schedule': crontab(hour=3, minute=0),
     },
     'daily-inventory-summary': {
         'task': 'shop.tasks.send_daily_inventory_summary',
