@@ -11,8 +11,6 @@ from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
-from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_cookie
 from django.core.cache import cache
 import razorpay
 
@@ -73,8 +71,6 @@ def _search_products(query):
 # ─── Public Views ─────────────────────────────────────────────
 
 
-@vary_on_cookie
-@cache_page(60 * 5)
 def index(request):
     cart = _get_or_create_cart(request)
     cart_items_dict = _get_cart_items_dict(cart)
