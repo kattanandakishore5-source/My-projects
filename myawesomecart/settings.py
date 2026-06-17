@@ -168,7 +168,15 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email Configuration (Resend SMTP)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.resend.com'
+EMAIL_PORT = 465
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = 'resend'
+EMAIL_HOST_PASSWORD = config('RESEND_API_KEY', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='MyAwesomeCart <send@nanda.software>')
+
 
 PASSWORD_RESET_TIMEOUT = 259200
 
@@ -265,6 +273,7 @@ if 'test' in sys.argv:
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
     AXES_ENABLED = False
+    EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
     AUTHENTICATION_BACKENDS = [
         'axes.backends.AxesStandaloneBackend',
         'django.contrib.auth.backends.ModelBackend',
