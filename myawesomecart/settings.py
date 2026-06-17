@@ -4,10 +4,13 @@ Django settings for MyAwesomeCart project.
 
 import os
 import sys
+from pathlib import Path
+from dotenv import load_dotenv
 from decouple import config
 import dj_database_url
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
 
 
 def _csv_config(name, default=''):
