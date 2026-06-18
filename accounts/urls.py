@@ -9,8 +9,8 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
 
-    # Email verification
-    path('activate/<uidb64>/<token>/', views.activate_account, name='activate'),
+    # Email verification via OTP code
+    path('verify/', views.verify_code, name='verify_code'),
 
     # Password Reset Flow (Checkpoint 5) — uses Django's built-in auth views
     # with AsyncPasswordResetForm for Celery-based async email dispatch

@@ -1,0 +1,61 @@
+{% extends 'shop/basic.html' %}
+{% block title %} Verify Code - My Awesome Cart {% endblock %}
+
+{% block body %}
+<div class="store-container my-5">
+    <div class="content-card-store mx-auto" style="max-width: 400px;">
+        <div class="text-center mb-4">
+            <h2 class="text-primary font-weight-bold">Verify Your Email</h2>
+            <p class="text-secondary">Enter the 6-digit OTP code sent to your email</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-danger bg-dark border-danger text-danger mb-3">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="form-group mb-4">
+                <label class="store-label" for="id_code">Verification Code</label>
+                <input type="text" name="code" id="id_code" maxlength="6" pattern="\d{6}" required
+                       class="form-control" placeholder="123456" autocomplete="off"
+                       value="{{ code_entered|default:'' }}">
+                <small class="form-text text-muted" style="font-size: 0.75rem; display: block; margin-top: 5px;">
+                    Please enter the 6-digit numeric code sent to your email.
+                </small>
+            </div>
+
+            <button type="submit" class="btn btn-cta w-100 py-3 mt-2">Verify & Activate</button>
+        </form>
+
+        <div class="mt-4 text-center border-top border-secondary pt-3">
+            <p class="text-secondary">Need to change your email?
+                <a href="{% url 'signup' %}" class="text-primary font-weight-bold">Sign up again</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Styling to match store design system */
+    input[type="text"] {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background-color: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        color: white !important;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 1.5rem;
+        letter-spacing: 0.25rem;
+    }
+    input:focus {
+        border-color: var(--accent-primary) !important;
+        outline: none;
+    }
+</style>
+{% endblock %}
