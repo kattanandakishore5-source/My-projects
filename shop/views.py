@@ -14,7 +14,7 @@ from django.conf import settings
 from django.core.cache import cache
 import razorpay
 
-from .models import Product, Contact, Orders, OrderUpdate, Cart, CartItem, Coupon, Wishlist
+from .models import Product, Contact, Orders, Cart, CartItem, Coupon, Wishlist
 from .forms import ReviewForm
 from .utils import calculate_cart_total, build_product_carousel
 from shop.tasks import send_order_confirmation_email

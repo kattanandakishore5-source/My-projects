@@ -56,7 +56,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.postgres',
     'cloudinary_storage',
     'cloudinary',
     'rest_framework',
@@ -109,6 +108,9 @@ DATABASES = {
         conn_max_age=600
     )
 }
+
+if 'postgresql' in DATABASES['default']['ENGINE']:
+    INSTALLED_APPS.append('django.contrib.postgres')
 
 AUTH_PASSWORD_VALIDATORS = [
     # {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

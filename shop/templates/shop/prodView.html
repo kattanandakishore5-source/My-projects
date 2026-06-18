@@ -14,18 +14,17 @@
 
         <!-- BOX 1 — Hero Image (spans 2 cols, 2 rows) -->
         <div class="bento-box bento-hero hover-zoom" id="product-hero-image">
-            {% if product.stock <= 0 %}
-                <span class="stock-badge stock-badge--danger">Out of Stock</span>
-            {% elif product.stock <= product.low_stock_threshold %}
-                <span class="stock-badge stock-badge--warning">Low Stock</span>
-            {% endif %}
+            {% if product.stock <= 0 %} <span class="stock-badge stock-badge--danger">Out of Stock</span>
+                {% elif product.stock <= product.low_stock_threshold %} <span class="stock-badge stock-badge--warning">
+                    Low Stock</span>
+                    {% endif %}
 
-            <div class="wishlist-float">
-                {% include 'shop/partials/wishlist_icon.html' with i=product %}
-            </div>
+                    <div class="wishlist-float">
+                        {% include 'shop/partials/wishlist_icon.html' with i=product %}
+                    </div>
 
-            <img src="{{ product.image.url }}" alt="{{product.product_name}}" class="img-fluid" loading="eager"
-                 style="max-height: 400px; width: 100%; object-fit: contain; border-radius: 12px;">
+                    <img src="{{ product.image.url }}" alt="{{product.product_name}}" class="img-fluid" loading="eager"
+                        style="max-height: 400px; width: 100%; object-fit: contain; border-radius: 12px;">
         </div>
 
         <!-- BOX 2 — Core Details (top right) -->
@@ -36,52 +35,55 @@
             <div style="margin-top: 0.75rem;">
                 <span class="category-tag">{{product.category}}</span>
                 {% if product.subcategory %}
-                    <span class="category-tag">{{product.subcategory}}</span>
+                <span class="category-tag">{{product.subcategory}}</span>
                 {% endif %}
             </div>
 
             <div class="stock-indicator" style="margin-top: 1.25rem;">
-                {% if product.stock <= 0 %}
-                    <span class="stock-dot stock-dot--out"></span>
+                {% if product.stock <= 0 %} <span class="stock-dot stock-dot--out"></span>
                     <span class="text-danger">Out of stock</span>
-                {% elif product.stock <= product.low_stock_threshold %}
-                    <span class="stock-dot stock-dot--low"></span>
-                    <span class="text-warning">Only {{product.stock}} left</span>
-                {% else %}
-                    <span class="stock-dot stock-dot--ok"></span>
-                    <span class="text-success">In stock</span>
-                {% endif %}
+                    {% elif product.stock <= product.low_stock_threshold %} <span class="stock-dot stock-dot--low">
+                        </span>
+                        <span class="text-warning">Only {{product.stock}} left</span>
+                        {% else %}
+                        <span class="stock-dot stock-dot--ok"></span>
+                        <span class="text-success">In stock</span>
+                        {% endif %}
             </div>
         </div>
 
         <!-- BOX 3 — Action Center (middle right) -->
         <div class="bento-box bento-actions" id="product-action-center">
-            <h6 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">
+            <h6
+                style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">
                 Quick Actions
             </h6>
 
             {% if product.cart_qty %}
-                <div id="detail-qty-container">
-                    <div class="qty-selector mb-3">
-                        <button class="btn-qty-detail" data-product-id="{{ product.id }}" data-action="decrement" aria-label="Decrease quantity">&minus;</button>
-                        <span class="qty-value qty-display">{{ product.cart_qty }}</span>
-                        <button class="btn-qty-detail" data-product-id="{{ product.id }}" data-action="increment" aria-label="Increase quantity">+</button>
-                    </div>
+            <div id="detail-qty-container">
+                <div class="qty-selector mb-3">
+                    <button class="btn-qty-detail" data-product-id="{{ product.id }}" data-action="decrement"
+                        aria-label="Decrease quantity">&minus;</button>
+                    <span class="qty-value qty-display">{{ product.cart_qty }}</span>
+                    <button class="btn-qty-detail" data-product-id="{{ product.id }}" data-action="increment"
+                        aria-label="Increase quantity">+</button>
                 </div>
-                <button class="btn-add-cart-hero in-cart" data-product-id="{{ product.id }}">✓ In Cart</button>
+            </div>
+            <button class="btn-add-cart-hero in-cart" data-product-id="{{ product.id }}">✓ In Cart</button>
             {% else %}
-                <div id="detail-qty-container" style="display: none;"></div>
-                {% if product.stock > 0 %}
-                    <button class="btn-add-cart-hero" data-product-id="{{ product.id }}">Add To Cart</button>
-                {% else %}
-                    <button class="btn-add-cart-hero" disabled>Out of Stock</button>
-                {% endif %}
+            <div id="detail-qty-container" style="display: none;"></div>
+            {% if product.stock > 0 %}
+            <button class="btn-add-cart-hero" data-product-id="{{ product.id }}">Add To Cart</button>
+            {% else %}
+            <button class="btn-add-cart-hero" disabled>Out of Stock</button>
+            {% endif %}
             {% endif %}
         </div>
 
         <!-- BOX 4 — Metadata: Ratings (bottom right) -->
         <div class="bento-box bento-meta" id="product-metadata">
-            <h6 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">
+            <h6
+                style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">
                 Ratings & Reviews
             </h6>
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;">
@@ -97,7 +99,8 @@
 
         <!-- BOX 5 — Description (full width bottom-left) -->
         <div class="bento-box bento-desc" id="product-description">
-            <h6 style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">
+            <h6
+                style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">
                 About This Product
             </h6>
             <p style="font-size: 1.05rem; line-height: 1.7; color: var(--text-secondary); margin: 0;">
@@ -179,7 +182,9 @@
 
                         <!-- Interactive Star Rating -->
                         <div style="margin-bottom: 1.25rem;">
-                            <label style="color: var(--text-secondary); font-size: 0.82rem; display: block; margin-bottom: 8px;">Your Rating</label>
+                            <label
+                                style="color: var(--text-secondary); font-size: 0.82rem; display: block; margin-bottom: 8px;">Your
+                                Rating</label>
                             <input type="hidden" name="rating" id="id_rating" value="5">
                             <div class="star-rating-input">
                                 <input type="radio" id="star5" name="star_visual" value="5" checked>
@@ -196,16 +201,21 @@
                         </div>
 
                         <div style="margin-bottom: 1.25rem;">
-                            <label style="color: var(--text-secondary); font-size: 0.82rem; display: block; margin-bottom: 8px;">Your Experience</label>
+                            <label
+                                style="color: var(--text-secondary); font-size: 0.82rem; display: block; margin-bottom: 8px;">Your
+                                Experience</label>
                             {{ form.review_text }}
                         </div>
 
                         <div style="margin-bottom: 1.25rem;">
-                            <label style="color: var(--text-secondary); font-size: 0.82rem; display: block; margin-bottom: 8px;">Attach Image</label>
+                            <label
+                                style="color: var(--text-secondary); font-size: 0.82rem; display: block; margin-bottom: 8px;">Attach
+                                Image</label>
                             {{ form.image }}
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100" style="padding: 12px; font-weight: 600;">Submit Review</button>
+                        <button type="submit" class="btn btn-primary w-100"
+                            style="padding: 12px; font-weight: 600;">Submit Review</button>
                     </form>
                 </div>
                 {% else %}
@@ -234,7 +244,8 @@
                 </div>
                 {% empty %}
                 <div class="bento-box" style="text-align: center; padding: 2.5rem;">
-                    <p class="text-secondary" style="margin: 0;">No reviews yet. Be the first to review this product!</p>
+                    <p class="text-secondary" style="margin: 0;">No reviews yet. Be the first to review this product!
+                    </p>
                 </div>
                 {% endfor %}
 
@@ -242,7 +253,8 @@
                 <nav aria-label="Review pages" style="margin-top: 1.5rem;">
                     <ul class="pagination justify-content-center" style="gap: 5px;">
                         {% if page_obj.has_previous %}
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                        <li class="page-item"><a class="page-link"
+                                href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
                         {% endif %}
 
                         {% for num in page_obj.paginator.page_range %}
@@ -254,7 +266,8 @@
                         {% endfor %}
 
                         {% if page_obj.has_next %}
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                        </li>
                         {% endif %}
                     </ul>
                 </nav>
@@ -270,8 +283,8 @@
 {% block js %}
 <script>
     // Interactive star rating: sync visual stars → hidden input
-    document.querySelectorAll('.star-rating-input input[type="radio"]').forEach(function(radio) {
-        radio.addEventListener('change', function() {
+    document.querySelectorAll('.star-rating-input input[type="radio"]').forEach(function (radio) {
+        radio.addEventListener('change', function () {
             var hiddenInput = document.getElementById('id_rating');
             if (hiddenInput) {
                 hiddenInput.value = this.value;
