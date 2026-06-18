@@ -27,7 +27,7 @@
                 {% elif "Sale" in i.category %}
                     <span class="stock-badge stock-badge--sale">Sale</span>
                 {% endif %}
-                <img src='/media/{{i.image}}' alt="{{i.product_name}}" class="img-fluid" loading="lazy">
+                <img src='{{ i.image.url }}' alt="{{i.product_name}}" class="img-fluid" loading="lazy">
                 <div class="wishlist-action" style="position: absolute; top: 5px; right: 5px; z-index: 10;">
                     {% include 'shop/partials/wishlist_icon.html' with i=i %}
                 </div>

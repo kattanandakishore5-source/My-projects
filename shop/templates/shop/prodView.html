@@ -24,7 +24,7 @@
                 {% include 'shop/partials/wishlist_icon.html' with i=product %}
             </div>
 
-            <img src="/media/{{product.image}}" alt="{{product.product_name}}" class="img-fluid" loading="eager"
+            <img src="{{ product.image.url }}" alt="{{product.product_name}}" class="img-fluid" loading="eager"
                  style="max-height: 400px; width: 100%; object-fit: contain; border-radius: 12px;">
         </div>
 
@@ -119,7 +119,7 @@
             {% for rec in recommendations %}
             <div class="rec-card">
                 <a href="/shop/products/{{rec.id}}" style="text-decoration: none; color: inherit;">
-                    <img src="/media/{{rec.image}}" alt="{{rec.product_name}}" loading="lazy">
+                    <img src="{{ rec.image.url }}" alt="{{rec.product_name}}" loading="lazy">
                     <div class="rec-name">{{ rec.product_name }}</div>
                     <div class="rec-price">₹{{ rec.price }}</div>
                     <div style="margin: 0.4rem 0;">
@@ -147,7 +147,7 @@
             {% for rv in recently_viewed %}
             <div class="rec-card" style="opacity: 0.85;">
                 <a href="/shop/products/{{rv.id}}" style="text-decoration: none; color: inherit;">
-                    <img src="/media/{{rv.image}}" alt="{{rv.product_name}}" loading="lazy" style="height: 120px;">
+                    <img src="{{ rv.image.url }}" alt="{{rv.product_name}}" loading="lazy" style="height: 120px;">
                     <div class="rec-name" style="font-size: 0.85rem;">{{ rv.product_name }}</div>
                 </a>
                 <div class="cart-action" style="margin-top: auto; padding-top: 0.5rem;">
