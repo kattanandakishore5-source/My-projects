@@ -711,6 +711,21 @@ a:hover {
     color: var(--text-secondary);
 }
 
+.btn-add-cart-hero.in-cart {
+    background: var(--border-color);
+    color: var(--text-secondary);
+    cursor: default;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-add-cart-hero.in-cart:hover {
+    background: var(--border-color);
+    color: var(--text-secondary);
+    transform: none;
+    box-shadow: none;
+}
+
 /* ===================================================================
    INTERACTIVE STAR RATING — Review Form
    =================================================================== */

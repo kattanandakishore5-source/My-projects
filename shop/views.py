@@ -124,32 +124,6 @@ def contact(request):
     return render(request, 'shop/contact.html', {'thank': thank})
 
 
-def tracker(request):
-    if request.method == "POST":
-        raw_order_id = request.POST.get('orderId', '')
-        email = request.POST.get('email', '')
-        try:
-            order_id = int(raw_order_id)
-        except (ValueError, TypeError):
-            return JsonResponse({"status": "error", "message": "Invalid Order ID"})
-        try:
-            order = Orders.objects.filter(order_id=order_id, email=email)
-            if len(order) > 0:
-                update = OrderUpdate.objects.filter(order_id=order_id)
-                updates = [{'text': item.update_desc, 'time': item.timestamp} for item in update]
-                response = json.dumps(
-                    {"status": "success", "updates": updates, "itemsJson": order[0].items_json},
-                    default=str,
-                )
-                return HttpResponse(response)
-            else:
-                return JsonResponse({"status": "noitem"})
-        except Exception as e:
-            logger.exception("Error in tracker: %s", str(e))
-            return JsonResponse({"status": "error"})
-    return render(request, 'shop/tracker.html')
-
-
 def productView(request, myid):
     cache_key = f'product_{myid}'
     product = cache.get(cache_key)

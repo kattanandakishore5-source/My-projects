@@ -117,6 +117,11 @@
         if (!btn) return;
         e.preventDefault();
 
+        // Prevent adding again if the item is already in the cart
+        if (btn.classList.contains('in-cart')) {
+            return;
+        }
+
         const productId = btn.dataset.productId;
         if (!productId) return;
 
@@ -134,6 +139,7 @@
                 qtyContainer.style.display = 'block';
             }
             btn.textContent = '✓ In Cart';
+            btn.classList.add('in-cart');
             btn.disabled = false;
 
             if (typeof showToast === 'function') {
@@ -214,6 +220,7 @@
                 }
                 if (heroBtn) {
                     heroBtn.textContent = 'Add To Cart';
+                    heroBtn.classList.remove('in-cart');
                     heroBtn.disabled = false;
                 }
             } else {
@@ -222,6 +229,7 @@
                 }
                 if (heroBtn) {
                     heroBtn.textContent = '✓ In Cart';
+                    heroBtn.classList.add('in-cart');
                 }
             }
 

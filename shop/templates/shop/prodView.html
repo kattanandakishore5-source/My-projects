@@ -68,7 +68,7 @@
                         <button class="btn-qty-detail" data-product-id="{{ product.id }}" data-action="increment" aria-label="Increase quantity">+</button>
                     </div>
                 </div>
-                <button class="btn-add-cart-hero" data-product-id="{{ product.id }}">✓ In Cart</button>
+                <button class="btn-add-cart-hero in-cart" data-product-id="{{ product.id }}">✓ In Cart</button>
             {% else %}
                 <div id="detail-qty-container" style="display: none;"></div>
                 {% if product.stock > 0 %}
