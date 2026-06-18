@@ -38,7 +38,7 @@ class ProductAdmin(admin.ModelAdmin):
         }),
     )
 
-    readonly_fields = ('img_preview',)
+    readonly_fields = ('img_preview', 'pub_date')
 
     def img_preview(self, obj):
         if obj.image:
